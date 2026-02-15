@@ -56,7 +56,7 @@ As a **Chef**, I should be able to:
 - Add or remove recipes from my Favourites list.
 - Organize recipes into Collections.
 - Create, Edit, and Delete Shopping Lists.
-- Export Recipe 
+- Export Recipe.
 - Send a Shopping List to myself via Email.
 - Export Shopping List.
 - Send a specific Recipe to myself via Email.
