@@ -26,8 +26,8 @@ Prerequisites:
 This generates the production-ready frontend in frontend/dist.
 
 2. Run the backend
-   - cd backend
-   - go run main.go
+   - from the root directory
+   - go run cmd/server/main.go
 
 
 3. Open the application on http://localhost:8080
