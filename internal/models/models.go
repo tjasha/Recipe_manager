@@ -4,10 +4,17 @@ import "time"
 
 // User struct
 type User struct {
-	ID       uint   `json:"id"`
-	Name     string `json:"name"`
-	LastName string `json:"lastName"`
-	Email    string `json:"email"`
+	ID          uint   `json:"id"`
+	UserName    string `json:"name"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	AccessLevel int    `json:"accessLevel"`
+	CreatedAt   time.Time
+	ModifiedAt  time.Time
+}
+
+// Ingredient struct
+type Ingredient struct {
 }
 
 // IngredientInRecipe struct
