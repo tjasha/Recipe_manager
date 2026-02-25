@@ -31,3 +31,30 @@ This generates the production-ready frontend in frontend/dist.
 
 
 3. Open the application on http://localhost:8080
+
+## Database
+
+Project is running Postgres database <br>
+My local database is connected with 
+`export DB_URL=postgres://tjasaspes:@localhost:5445/recipe-manager?sslmode=disable`
+
+For migrations [migrate](https://github.com/golang-migrate/migrate) is used
+
+- To install it run `brew install golang-migrate`
+- Install migrate driver
+```aiexclude
+go get -u github.com/golang-migrate/migrate/v4
+go get -u github.com/golang-migrate/migrate/v4/database/postgres
+go get -u github.com/golang-migrate/migrate/v4/source/file
+```
+- create migrations files `migrate create -ext sql -dir migrations -seq <file_name>`         
+
+- run migrations 
+```aiexclude
+migrate -path migrations -database "$DB_URL" up
+migrate -path migrations -database "$DB_URL" down
+```
+
+### Driver 
+
+Project is using pgxpool driver. 
