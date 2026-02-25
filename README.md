@@ -55,3 +55,6 @@ migrate -path migrations -database "$DB_URL" up
 migrate -path migrations -database "$DB_URL" down
 ```
 
+### Driver 
+
+Project is using pgxpool driver. 
