@@ -2,47 +2,51 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
-	"github.com/tjasha/Recipe_manager/internal/handlers"
-)
+	"github.com/tjasha/Recipe_manager/internal/config"
+	"github.com/tjasha/Recipe_manager/internal/database"
+	apphttp "github.com/tjasha/Recipe_manager/internal/handlers"
+	"github.com/tjasha/Recipe_manager/internal/repository"
+	"github.com/tjasha/Recipe_manager/internal/service"
 
-//func main() {
-//	//defined port
-//	port := "8080"
-//
-//	// Test API endpoint
-//	http.HandleFunc("/api/hello", func(w http.ResponseWriter, r *http.Request) {
-//		w.Header().Set("Content-Type", "application/json")
-//		json.NewEncoder(w).Encode(map[string]string{"message": "Hello Test test"})
-//	})
-//
-//	// Serve React files
-//	distDir := "../frontend/dist"
-//
-//	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-//
-//		path := filepath.Join(distDir, r.URL.Path)
-//		if info, err := os.Stat(path); err == nil && !info.IsDir() {
-//			http.ServeFile(w, r, path)
-//			return
-//		}
-//
-//		// if other file doesn't exist, open index.html
-//		http.ServeFile(w, r, filepath.Join(distDir, "index.html"))
-//	})
-//
-//	log.Printf("Server running at http://localhost:%s", port)
-//	if err := http.ListenAndServe(":"+port, nil); err != nil {
-//		log.Fatal(err)
-//	}
-//}
+	//"github.com/golang-migrate/migrate/v4"
+	//"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+)
 
 func main() {
 
-	// Recipes API
-	http.HandleFunc("/", handlers.RecipesHandler)
+	config := config.LoadConfig()
 
-	fmt.Println("Server started at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	pool, err := database.NewPool(config.DB_URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pool.Close()
+
+	repo := repository.NewPostgresRepository(pool)
+	userService := service.NewService(repo)
+	handler := apphttp.NewHandler(userService)
+
+	http.HandleFunc("/", handler.CreateUserHandler)
+
+	//// Recipes API - reading from json file
+	//http.HandleFunc("/", handlers.Handler)
+
+	port := config.PORT
+	fmt.Println("port:", port)
+	if port == "" {
+		log.Fatal("PORT not set")
+	}
+
+	// Start the server
+	fmt.Println("Server started at http://localhost:" + port)
+	err = http.ListenAndServe(fmt.Sprintf(":"+port), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
