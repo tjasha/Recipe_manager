@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
+	"github.com/tjasha/Recipe_manager/internal/config"
 	"github.com/tjasha/Recipe_manager/internal/database"
 	apphttp "github.com/tjasha/Recipe_manager/internal/handlers"
 	"github.com/tjasha/Recipe_manager/internal/repository"
@@ -19,13 +19,9 @@ import (
 
 func main() {
 
-	dbURL := os.Getenv("DB_URL")
-	fmt.Println(dbURL)
-	if dbURL == "" {
-		log.Fatal("DB_URL not set")
-	}
+	config := config.LoadConfig()
 
-	pool, err := database.NewPool(dbURL)
+	pool, err := database.NewPool(config.DB_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,9 +36,17 @@ func main() {
 	//// Recipes API - reading from json file
 	//http.HandleFunc("/", handlers.Handler)
 
-	fmt.Println("Server started at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	port := config.PORT
+	fmt.Println("port:", port)
+	if port == "" {
+		log.Fatal("PORT not set")
+	}
+
+	// Start the server
+	fmt.Println("Server started at http://localhost:" + port)
+	err = http.ListenAndServe(fmt.Sprintf(":"+port), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }
