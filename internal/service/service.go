@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/tjasha/Recipe_manager/internal/models"
 	"github.com/tjasha/Recipe_manager/internal/repository"
 )
@@ -10,7 +11,7 @@ type Service struct {
 	repo repository.Repository
 }
 
-func NewService(r *repository.PostgresRepository) *Service {
+func NewService(r repository.Repository) *Service {
 	return &Service{repo: r}
 }
 
