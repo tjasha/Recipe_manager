@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -46,14 +47,14 @@ func NewHandler(s *service.Service) *Handler {
 }
 
 func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	//id, err := h.service.CreateUser(context.Background(), "NewUser4", "NewUser4@test.com", "pass", 0)
-	//if err != nil {
-	//	http.Error(w, err.Error(), 500)
-	//	return
-	//}
-	//
-	//fmt.Fprintf(w, "User created with ID:", id)
+	id, err := h.service.CreateUser(context.Background(), "NewUser5", "NewUser5@test.com", "pass", 0)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
-	fmt.Fprintf(w, "User created with ID:")
+	fmt.Fprintf(w, "User created with ID:", id)
+
+	//fmt.Fprintf(w, "User created with ID:")
 
 }
