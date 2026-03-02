@@ -1,15 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/tjasha/Recipe_manager/internal/config"
 	"github.com/tjasha/Recipe_manager/internal/database"
-	apphttp "github.com/tjasha/Recipe_manager/internal/handlers"
-	"github.com/tjasha/Recipe_manager/internal/repository"
-	"github.com/tjasha/Recipe_manager/internal/service"
+	"github.com/tjasha/Recipe_manager/internal/router"
 
 	//"github.com/golang-migrate/migrate/v4"
 	//"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -27,26 +24,35 @@ func main() {
 	}
 	defer pool.Close()
 
-	repo := repository.NewPostgresRepository(pool)
-	userService := service.NewService(repo)
-	handler := apphttp.NewHandler(userService)
+	//repo := repository.NewPostgresRepository(pool)
+	//userService := service.NewService(repo)
+	//handler := apphttp.NewHandler(userService)
 
-	http.HandleFunc("/", handler.CreateUserHandler)
+	//http.HandleFunc("/", handler.CreateUserHandler)
 
 	//// Recipes API - reading from json file
 	//http.HandleFunc("/", handlers.Handler)
 
-	port := config.PORT
-	fmt.Println("port:", port)
-	if port == "" {
-		log.Fatal("PORT not set")
-	}
+	//// Serve frontend files
+	//fs := http.FileServer(http.Dir("/Users/tjasaspes/Documents/Learning Go/Recipe_manager/frontend/src/App.jsx"))
+	//http.Handle("/", fs)
+	//
+	//port := config.PORT
+	//fmt.Println("port:", port)
+	//if port == "" {
+	//	log.Fatal("PORT not set")
+	//}
+	//
+	//// Start the server
+	//fmt.Println("Server started at http://localhost:" + port)
+	//err = http.ListenAndServe(fmt.Sprintf(":"+port), nil)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 
-	// Start the server
-	fmt.Println("Server started at http://localhost:" + port)
-	err = http.ListenAndServe(fmt.Sprintf(":"+port), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	r := router.New()
+
+	log.Println("Server running on :8080")
+	http.ListenAndServe(":8080", r)
 
 }
