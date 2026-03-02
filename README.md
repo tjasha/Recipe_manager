@@ -21,16 +21,14 @@ Prerequisites:
 1. Build the frontend
    - cd frontend
    - npm install
-   - npm run build
-
-This generates the production-ready frontend in frontend/dist.
+   - npm run build (This generates the production-ready frontend in frontend/dist.)
+   - in developement run npm run dev
+   - frontend will run on http://localhost:5173/
 
 2. Run the backend
    - from the root directory
    - go run cmd/server/main.go
-
-
-3. Open the application on http://localhost:8080
+   - backend is running on http://localhost:8080
 
 ## Database
 

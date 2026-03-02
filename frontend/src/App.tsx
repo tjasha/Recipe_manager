@@ -1,7 +1,7 @@
 import './App.css'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage.jsx";
-import MainLayout from "./layouts/MainLayout.jsx";
+import HomePage from "./pages/HomePage.tsx";
+import MainLayout from "./layouts/MainLayout.tsx";
 
 
 function App() {
