@@ -5,5 +5,5 @@ CREATE TABLE users (
     password TEXT NOT NULL,
     access_level INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    modified_at TIMESTAMP DEFAULT NOW()
 );

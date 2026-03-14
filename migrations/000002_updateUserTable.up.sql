@@ -1,0 +1,11 @@
+ALTER TABLE users
+    ADD COLUMN state TEXT DEFAULT 'active';
+
+ALTER TABLE users
+    ADD COLUMN google_id TEXT UNIQUE;
+
+ALTER TABLE users
+    ALTER COLUMN user_name DROP NOT NULL;
+
+ALTER TABLE users
+    ALTER COLUMN password DROP NOT NULL;
