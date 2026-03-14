@@ -3,11 +3,29 @@ package repository
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tjasha/Recipe_manager/internal/config"
-	"github.com/tjasha/Recipe_manager/internal/models"
+	"github.com/tjasha/Recipe_manager/internal/model"
 )
+
+//NOV PREDLOG
+//// V testni datoteki:
+//type MockRepository struct {}
+//
+//func (m *MockRepository) CreateUser(ctx context.Context, user *model.User) (int, error) {
+//	// Ni klica v bazo!
+//	// Samo vrnemo vnaprej določen rezultat za ta test.
+//	return 123, nil
+//}
+//
+//// ... v testni funkciji ...
+//mockRepo := &MockRepository{}
+//app := &handler.Application{
+//DB: mockRepo, // Uporabimo lažni repozitorij!
+//// ... ostale odvisnosti
+//}
 
 func setupTestDB(t *testing.T) *pgxpool.Pool {
 	config := config.LoadConfig()
@@ -46,11 +64,12 @@ func TestCreateUser(t *testing.T) {
 
 	repo := NewPostgresRepository(pool)
 
-	id, err := repo.CreateUser(context.Background(), &models.User{
-		UserName:    "testUser",
-		Email:       "user@test.com",
-		Password:    "pass",
+	id, googleId, accessLevel, err := repo.AuthenticateUser(context.Background(), &model.User{
+		UserName: "testUser",
+		Email:    "user@test.com",
+		//Password:    "pass",
 		AccessLevel: 1,
+		GoogleID:    "testID",
 	})
 
 	if err != nil {

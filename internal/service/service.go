@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/tjasha/Recipe_manager/internal/models"
+	"github.com/tjasha/Recipe_manager/internal/model"
 	"github.com/tjasha/Recipe_manager/internal/repository"
 )
 
@@ -16,7 +16,7 @@ func NewService(r repository.Repository) *Service {
 }
 
 func (s *Service) CreateUser(ctx context.Context, userName, email, password string, accessLevel int) (int, error) {
-	user := &models.User{
+	user := &model.User{
 		UserName:    userName,
 		Email:       email,
 		Password:    password,

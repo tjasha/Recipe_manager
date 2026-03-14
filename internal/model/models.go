@@ -1,4 +1,4 @@
-package models
+package model
 
 import "time"
 
@@ -11,6 +11,8 @@ type User struct {
 	AccessLevel int    `json:"accessLevel"`
 	CreatedAt   time.Time
 	ModifiedAt  time.Time
+	State       string
+	GoogleID    string
 }
 
 // Ingredient struct

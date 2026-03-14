@@ -3,9 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/tjasha/Recipe_manager/internal/config"
-	"github.com/tjasha/Recipe_manager/internal/database"
+	"github.com/tjasha/Recipe_manager/internal/handler"
+	"github.com/tjasha/Recipe_manager/internal/repository"
 	"github.com/tjasha/Recipe_manager/internal/router"
 
 	//"github.com/golang-migrate/migrate/v4"
@@ -15,14 +18,29 @@ import (
 )
 
 func main() {
+	cfg := config.LoadConfig()
 
-	config := config.LoadConfig()
-
-	pool, err := database.NewPool(config.DB_URL)
+	pool, err := repository.NewPool(cfg.DB_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer pool.Close()
+
+	// Initialize session manager
+	session := scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = cfg.InProduction
+
+	// Create the repository implementation
+	dbRepo := repository.NewPostgresRepository(pool)
+
+	app := &handler.Application{
+		Config:  cfg,
+		Session: session,
+		DB:      dbRepo, // concrete implementation of DB
+	}
 
 	//repo := repository.NewPostgresRepository(pool)
 	//userService := service.NewService(repo)
@@ -34,7 +52,7 @@ func main() {
 	//http.HandleFunc("/", handlers.Handler)
 
 	//// Serve frontend files
-	//fs := http.FileServer(http.Dir("/Users/tjasaspes/Documents/Learning Go/Recipe_manager/frontend/src/App.jsx"))
+	//fs := http.FileServer(http.Dir("/Users/tjasaspes/Documents/Learning Go/Recipe_manager/frontend/src/App.tsx"))
 	//http.Handle("/", fs)
 	//
 	//port := config.PORT
@@ -50,9 +68,8 @@ func main() {
 	//	log.Fatal(err)
 	//}
 
-	r := router.New()
+	r := router.New(app)
 
 	log.Println("Server running on :8080")
 	http.ListenAndServe(":8080", r)
-
 }

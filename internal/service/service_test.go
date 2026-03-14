@@ -4,12 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/tjasha/Recipe_manager/internal/models"
+	"github.com/tjasha/Recipe_manager/internal/model"
 )
 
 type MockRepo struct{}
 
-func (m *MockRepo) CreateUser(ctx context.Context, user *models.User) (int, error) {
+func (m *MockRepo) CreateUser(ctx context.Context, user *model.User) (int, error) {
 	return 3, nil
 }
 

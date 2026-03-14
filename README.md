@@ -55,4 +55,12 @@ migrate -path migrations -database "$DB_URL" down
 
 ### Driver 
 
-Project is using pgxpool driver. 
+Project is using pgxpool driver.
+
+## Session management
+
+For session management I am using SCS - https://github.com/alexedwards/scs
+
+## Google OAuth
+
+For managing users, Google OAuth is used
