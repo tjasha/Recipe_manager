@@ -28,7 +28,7 @@ export default function LoginPage() {
                 console.log('Backend login successful. User:', user);
                 // The backend has set a session cookie.
                 // Now, navigate to the main part of the application.
-                navigate('/home');
+                navigate('/');
             } else {
                 // Handle errors from the backend (e.g., invalid token, server issue)
                 console.error('Backend login failed.');
@@ -45,14 +45,6 @@ export default function LoginPage() {
         console.log('Google Login Failed');
         setLoginError('Google login failed. Please try again.');
     };
-
-    // This function only logs the user out of their Google account on the frontend.
-    // We will need to expand this to also call our backend's logout endpoint.
-    function handleLogout() {
-        googleLogout();
-        console.log("Logged out from Google.")
-        // TODO: Call backend logout endpoint
-    }
 
     return (
         <div className="container" style={{ maxWidth: '400px', margin: '5rem auto' }}>

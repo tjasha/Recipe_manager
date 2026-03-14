@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 export default function NavigationBar() {
     const navigate = useNavigate();
