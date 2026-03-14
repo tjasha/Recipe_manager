@@ -35,10 +35,10 @@ func (r *PostgresRepository) CreateUser(ctx context.Context, user *model.User) (
 func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	var user model.User
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, user_name, email, google_id, access_level, created_at, modified_at 
+		`SELECT id, user_name, email, google_id, access_level, created_at, modified_at, state 
 		 FROM users WHERE email = $1`,
 		email,
-	).Scan(&user.ID, &user.UserName, &user.Email, &user.GoogleID, &user.AccessLevel, &user.CreatedAt, &user.ModifiedAt)
+	).Scan(&user.ID, &user.UserName, &user.Email, &user.GoogleID, &user.AccessLevel, &user.CreatedAt, &user.ModifiedAt, &user.State)
 
 	if err != nil {
 		return nil, err

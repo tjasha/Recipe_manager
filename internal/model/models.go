@@ -4,15 +4,15 @@ import "time"
 
 // User struct
 type User struct {
-	ID          uint   `json:"id"`
-	UserName    string `json:"name"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	AccessLevel int    `json:"accessLevel"`
-	CreatedAt   time.Time
-	ModifiedAt  time.Time
-	State       string
-	GoogleID    string
+	ID          uint      `json:"id"`
+	UserName    string    `json:"name"`
+	Email       string    `json:"email"`
+	Password    *string   `json:"-"`
+	AccessLevel int       `json:"accessLevel"`
+	CreatedAt   time.Time `json:"-"`
+	ModifiedAt  time.Time `json:"-"`
+	State       *string   `json:"state,omitempty"`
+	GoogleID    *string   `json:"googleID,omitempty"`
 }
 
 // Ingredient struct

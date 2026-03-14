@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
@@ -53,6 +54,7 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 	err := json.Unmarshal(body, &token)
 	if err != nil {
+		log.Printf("ERROR: Cannot unmarshal token: %v", err)
 		http.Error(w, "Cannot read token", http.StatusBadRequest)
 		return
 	}
@@ -60,25 +62,41 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 	// Validate the token
 	payload, err := idtoken.Validate(r.Context(), token.Credential, h.App.Config.GoogleOauthClientID)
 	if err != nil {
+		log.Printf("ERROR: Invalid token: %v", err)
 		http.Error(w, "Invalid token", http.StatusUnauthorized)
 		return
 	}
 
-	// --- User logic ---
-	email := payload.Claims["email"].(string)
+	claims := payload.Claims
+	log.Println(claims)
+
+	// User logic
+	email, ok := claims["email"].(string)
+	if !ok || email == "" {
+		log.Printf("ERROR: Email not found or not a string in token claims")
+		http.Error(w, "Email not found in token", http.StatusBadRequest)
+		return
+	}
+	name, ok := claims["name"].(string)
+	if !ok {
+		name = "New User" // Default name if it doesn't exist
+	}
+
 	user, err := h.App.DB.GetUserByEmail(r.Context(), email)
 
 	if err != nil {
 		// If user does not exist, create a new one
 		if errors.Is(err, pgx.ErrNoRows) {
+			googleID := payload.Subject
 			newUser := &model.User{
-				UserName:    payload.Claims["name"].(string),
+				UserName:    name,
 				Email:       email,
-				GoogleID:    payload.Subject,
-				AccessLevel: 1, // Default access level for new users
+				GoogleID:    &googleID,
+				AccessLevel: 1, // Default access level for new users - chef
 			}
 			newID, createErr := h.App.DB.CreateUser(r.Context(), newUser)
 			if createErr != nil {
+				log.Printf("ERROR: Failed to create user: %v", createErr)
 				http.Error(w, "Failed to create user", http.StatusInternalServerError)
 				return
 			}
@@ -86,6 +104,7 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 			user = newUser
 		} else {
 			// For any other database error
+			log.Printf("ERROR: Database error on GetUserByEmail: %v", err)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
@@ -94,6 +113,7 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 	// Renew token to prevent session fixation attacks.
 	err = h.App.Session.RenewToken(r.Context())
 	if err != nil {
+		log.Printf("ERROR: Failed to renew session token: %v", err)
 		http.Error(w, "Failed to renew session token", http.StatusInternalServerError)
 		return
 	}
@@ -102,7 +122,7 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 	h.App.Session.Put(r.Context(), "userID", user.ID)
 	h.App.Session.Put(r.Context(), "accessLevel", user.AccessLevel)
 
-	// --- Respond to Frontend ---
+	// Respond to Frontend with user info
 	response := UserResponse{
 		ID:          user.ID,
 		UserName:    user.UserName,
@@ -134,70 +154,3 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Logout successful"}`))
 }
-
-
-//func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-//	id, err := h.service.CreateUser(context.Background(), "NewUser5", "NewUser5@test.com", "pass", 0)
-//	if err != nil {
-//		http.Error(w, err.Error(), 500)
-//		return
-//	}
-//
-//	fmt.Fprintf(w, "User created with ID:", id)
-//
-//	//fmt.Fprintf(w, "User created with ID:")
-//
-//}
-//
-//func (h *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-//
-//	//prevent session fixation attack
-//	_ = m.App.Session.RenewToken(r.Context())
-//
-//	err := r.ParseForm()
-//	if err != nil {
-//		log.Println("Cannot parse form", err)
-//	}
-//
-//	email := r.Form.Get("email")
-//	password := r.Form.Get("password")
-//
-//	form := forms.New(r.PostForm)
-//	form.Required("email", "password")
-//	form.IsEmail("email")
-//
-//	// we want to send user back to the form
-//	if !form.Valid() {
-//		render.Template(w, r, "login.page.tmpl", &models.TemplateData{
-//			Form: form,
-//		})
-//		return
-//	}
-//
-//	// try to authenticate the user
-//	id, _, err := m.DB.Authenticate(email, password)
-//	if err != nil {
-//		log.Println("Authentication failed", err)
-//		// if there is an error,i want to send user back to the log in form
-//		m.App.Session.Put(r.Context(), "error", "Invalid login credentials")
-//		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
-//		return
-//	}
-//
-//	// we authenticate a user by saving the ID that we got in the session
-//	m.App.Session.Put(r.Context(), "user_id", id)
-//	// i want to send user to home page after authentication
-//	m.App.Session.Put(r.Context(), "flash", "Log in successful")
-//	http.Redirect(w, r, "/", http.StatusSeeOther)
-//
-//}
-//
-//func (h *Handler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-//	_ = h.App.Session.Destroy(r.Context())
-//	// renew session token
-//	_ = h.App.Session.RenewToken(r.Context())
-//
-//	googleLogout()
-//
-//	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
-//}

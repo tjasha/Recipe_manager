@@ -27,7 +27,7 @@ Prerequisites:
 
 2. Run the backend
    - from the root directory
-   - go run cmd/server/main.go
+   - go run cmd/api/main.go
    - backend is running on http://localhost:8080
 
 ## Database

@@ -14,13 +14,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import "bootstrap/dist/css/bootstrap.min.css";
 import App from './App'
-import { GoogleOAuthProvider } from '@react-oauth/google'
+import { GoogleOAuthProvider} from '@react-oauth/google'
 
-const CLIENT_ID = "544707640060-4olov7abecaemigsaqgciprslivq6bfk.apps.googleusercontent.com"
+const googleClientId = "544707640060-u21l0kiofbp0i1bdue59c8qodqugam46.apps.googleusercontent.com"
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <GoogleOAuthProvider clientId={CLIENT_ID}>
+        <GoogleOAuthProvider clientId={googleClientId}>
             <App />
         </GoogleOAuthProvider>
     </StrictMode>,

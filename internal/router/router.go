@@ -5,18 +5,34 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/tjasha/Recipe_manager/internal/handler"
 )
 
 func New(app *handler.Application) http.Handler {
 	r := chi.NewRouter()
 
+	// --- Middleware ---
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.AllowContentType("application/json"))
 
+	// CORS middleware - allows different origin of frontend and backend
+	r.Use(cors.Handler(cors.Options{
+		// Allowed origin - frontend
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
+		// Allows cookies / sessions
+		AllowCredentials: true,
+		MaxAge:           500,
+	}))
+
+	// Session middleware
+	r.Use(app.Session.LoadAndSave)
+
 	// Initialize handlers
-	h := handler.NewHandler(app)
+	h := handler.New(app)
 
 	r.Route("/api", func(api chi.Router) {
 		api.Get("/health", func(w http.ResponseWriter, r *http.Request) {

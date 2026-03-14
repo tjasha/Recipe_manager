@@ -1,8 +1,8 @@
 ALTER TABLE users
-DROP COLUMN state TEXT DEFAULT 'active';
+DROP COLUMN state;
 
 ALTER TABLE users
-DROP COLUMN google_id TEXT UNIQUE;
+DROP COLUMN google_id;
 
 ALTER TABLE users
 ALTER COLUMN user_name SET NOT NULL;
