@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS recipes_ingredients CASCADE;
+DROP TABLE IF EXISTS recipe_ingredient CASCADE;
 
 DROP TABLE IF EXISTS ingredient CASCADE;
 

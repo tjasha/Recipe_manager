@@ -31,7 +31,7 @@ CREATE TABLE instruction (
     id               SERIAL PRIMARY KEY,
     recipe_id        INTEGER NOT NULL REFERENCES recipe (id),
     step_sequence    INTEGER NOT NULL,
-    step_description INTEGER,
+    step_description TEXT,
     image_url        TEXT
 );
 
@@ -42,9 +42,9 @@ CREATE TABLE ingredient (
     image_url TEXT
 );
 
-CREATE TABLE recipes_ingredients (
+CREATE TABLE recipe_ingredient (
     id SERIAL PRIMARY KEY,
-    recipes_id INTEGER REFERENCES recipe(id),
-    ingredients_id INTEGER REFERENCES ingredient(id),
+    recipe_id INTEGER REFERENCES recipe(id),
+    ingredient_id INTEGER REFERENCES ingredient(id),
     quantity DOUBLE PRECISION
 )
