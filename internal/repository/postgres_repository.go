@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tjasha/Recipe_manager/internal/model"
@@ -46,14 +47,71 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 	return &user, nil
 }
 
-func (r *PostgresRepository) AuthenticateUser(ctx context.Context, user *model.User) (int, string, int, error) {
-	var id, accessLevel int
-	var UserName string
+//func (r *PostgresRepository) AuthenticateUser(ctx context.Context, user *model.User) (int, string, int, error) {
+//	var id, accessLevel int
+//	var UserName string
+//
+//	err := r.pool.QueryRow(ctx,
+//		"INSERT INTO users (user_name, email, password, access_level) VALUES ($1, $2, $3, $4) RETURNING id, user_name, access_level",
+//		user.UserName, user.Email, user.Password, user.AccessLevel,
+//	).Scan(&id, &UserName, &accessLevel)
+//
+//	return id, UserName, accessLevel, err
+//}
 
-	err := r.pool.QueryRow(ctx,
-		"INSERT INTO users (user_name, email, password, access_level) VALUES ($1, $2, $3, $4) RETURNING id, user_name, access_level",
-		user.UserName, user.Email, user.Password, user.AccessLevel,
-	).Scan(&id, &UserName, &accessLevel)
+// GetAllRecipes retrieves all recipes from the database.
+func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]*model.Recipe, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 
-	return id, UserName, accessLevel, err
+	//query := `
+	//	SELECT id, title, description, portion, preparation_time, cooking_time, nutrition_id, published, author,
+	//		image_url, created_at, modified_at
+	//	FROM recipe
+	//	ORDER BY modified_at DESC
+	//`
+
+	query := `
+		SELECT id, title, description, portion, preparation_time, cooking_time, published,
+			created_at, modified_at
+		FROM recipe 
+		ORDER BY modified_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recipes []*model.Recipe
+
+	//scan every results
+	for rows.Next() {
+		var recipe model.Recipe
+		err := rows.Scan(
+			&recipe.ID,
+			&recipe.Title,
+			&recipe.Description,
+			&recipe.Portion,
+			&recipe.PreparationTime,
+			&recipe.CookingTime,
+			//&recipe.Nutrition,
+			&recipe.Published,
+			//&recipe.Author,
+			//&recipe.ImageURL,
+			&recipe.CreatedAt,
+			&recipe.ModifiedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		recipes = append(recipes, &recipe)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return recipes, nil
 }
