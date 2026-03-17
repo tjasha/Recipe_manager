@@ -154,3 +154,18 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Logout successful"}`))
 }
+
+// ShowAllRecipes shows all recipes on the homepage.
+func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
+
+	recipes, err := h.App.DB.GetAllRecipes(r.Context())
+	log.Println(recipes)
+	if err != nil {
+		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipes)
+	log.Println(recipes)
+}

@@ -43,6 +43,9 @@ func New(app *handler.Application) http.Handler {
 		api.Post("/auth/google/verify", h.VerifyGoogleToken)
 		api.Post("/auth/logout", h.Logout)
 
+		// Recipes routes
+		api.Get("/recipes", h.ShowAllRecipes)
+
 	})
 
 	return r
