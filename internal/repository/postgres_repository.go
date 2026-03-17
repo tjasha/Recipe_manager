@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -72,7 +73,7 @@ func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]*model.Recipe
 	//`
 
 	query := `
-		SELECT id, title, description, portion, preparation_time, cooking_time, published,
+		SELECT id, title, description, portion, preparation_time, cooking_time, published, image_url,
 			created_at, modified_at
 		FROM recipe 
 		ORDER BY modified_at DESC
@@ -99,13 +100,17 @@ func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]*model.Recipe
 			//&recipe.Nutrition,
 			&recipe.Published,
 			//&recipe.Author,
-			//&recipe.ImageURL,
+			&recipe.ImageURL,
 			&recipe.CreatedAt,
 			&recipe.ModifiedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+		log.Print("iz DB:", recipe)
+		log.Print("iz DB image:", *recipe.ImageURL)
+		log.Print("iz DB image:", &recipe.ImageURL)
+
 		recipes = append(recipes, &recipe)
 	}
 

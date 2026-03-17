@@ -28,7 +28,7 @@ type Recipe struct {
 	Nutrition       *Nutrition            `json:"nutrition"`
 	Author          *User                 `json:"author"`
 	Published       *bool                 `json:"published"`
-	ImageURL        *string               `json:"image"`
+	ImageURL        *string               `json:"imageURL"`
 	Ingredients     *[]IngredientInRecipe `json:"ingredients"`
 	Instructions    *[]RecipeInstruction  `json:"instructions"`
 	CreatedAt       time.Time             `json:"createdAt"`

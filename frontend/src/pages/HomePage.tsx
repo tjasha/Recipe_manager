@@ -1,26 +1,3 @@
-// import { Link } from 'react-router-dom';
-//
-// export default function HomePage() {
-//     return (
-//         <div className="text-center">
-//             <h1>Recipe Manager</h1>
-//             <p className="lead">
-//                 Save, organize and manage your recipes with ease.
-//             </p>
-//
-//             <div className="mt-4">
-//                 <b>What do you want too cook today?     </b>
-//
-//                 <input></input>
-//                 <Link to="/recipes" className="btn btn-primary me-2">
-//                     Find Recipes
-//                 </Link>
-//             </div>
-//         </div>
-//     );
-// }
-
-
 import { useState, useEffect } from 'react';
 
 interface Recipe {
@@ -31,6 +8,7 @@ interface Recipe {
     preparationTime: number;
     cookingTime: number;
     published: boolean;
+    imageURL: string;
 }
 
 export default function HomePage() {
@@ -78,6 +56,9 @@ export default function HomePage() {
                     recipes.map(recipe => (
                         <div key={recipe.id} className="col-md-4 mb-4">
                             <div className="card h-100">
+                                {recipe.imageURL && (
+                                    <img src={recipe.imageURL} className="recipe-card-img" alt={recipe.title} />
+                                )}
                                 <div className="card-body">
                                     <h5 className="card-title">{recipe.title}</h5>
                                     <p className="card-text">{recipe.description}</p>
