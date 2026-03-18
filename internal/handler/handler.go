@@ -169,3 +169,35 @@ func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(recipes)
 	log.Println(recipes)
 }
+
+func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request, id int64) {
+
+	recipe, err := h.App.DB.GetRecipeByID(id)
+	log.Println(recipe)
+	if err != nil {
+		http.Error(w, "Failed to retrieve recipe", http.StatusInternalServerError)
+		return
+	}
+
+	ingredients, err := h.App.DB.GetIngredientsByRecipeID(r.Context(), id)
+	log.Println(ingredients)
+	if err != nil {
+		http.Error(w, "Failed to retrieve ingredients in the recipe", http.StatusInternalServerError)
+		return
+	}
+
+	recipe.Ingredients = ingredients
+
+	instructions, err := h.App.DB.GetInstructionsByRecipeID(r.Context(), id)
+	log.Println(instructions)
+	if err != nil {
+		http.Error(w, "Failed to retrieve instructions", http.StatusInternalServerError)
+		return
+	}
+
+	recipe.Instructions = instructions
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipe)
+	log.Println(recipe)
+}

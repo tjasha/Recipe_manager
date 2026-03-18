@@ -19,20 +19,20 @@ type User struct {
 
 // Recipe struct
 type Recipe struct {
-	ID              int64                 `json:"id"`
-	Title           string                `json:"title"`
-	Description     *string               `json:"description"`
-	Portion         int                   `json:"portion"`
-	PreparationTime *int                  `json:"preparationTime"`
-	CookingTime     *int                  `json:"cookingTime"`
-	Nutrition       *Nutrition            `json:"nutrition"`
-	Author          *User                 `json:"author"`
-	Published       *bool                 `json:"published"`
-	ImageURL        *string               `json:"imageURL"`
-	Ingredients     *[]IngredientInRecipe `json:"ingredients"`
-	Instructions    *[]RecipeInstruction  `json:"instructions"`
-	CreatedAt       time.Time             `json:"createdAt"`
-	ModifiedAt      time.Time             `json:"modifiedAt"`
+	ID              int64                `json:"id"`
+	Title           string               `json:"title"`
+	Description     *string              `json:"description"`
+	Portion         int                  `json:"portion"`
+	PreparationTime *int                 `json:"preparationTime"`
+	CookingTime     *int                 `json:"cookingTime"`
+	Nutrition       *Nutrition           `json:"nutrition"`
+	Author          *User                `json:"author"`
+	Published       *bool                `json:"published"`
+	ImageURL        *string              `json:"imageURL"`
+	Ingredients     []IngredientInRecipe `json:"ingredients"`
+	Instructions    []RecipeInstruction  `json:"instructions"`
+	CreatedAt       time.Time            `json:"createdAt"`
+	ModifiedAt      time.Time            `json:"modifiedAt"`
 }
 
 // Nutrition struct
