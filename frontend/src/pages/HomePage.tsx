@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Recipe {
     id: number;
@@ -12,6 +13,8 @@ interface Recipe {
 }
 
 export default function HomePage() {
+    // to create link on the card
+    const navigate = useNavigate();
     // State for saving the recipe list
     const [recipes, setRecipes] = useState<Recipe[]>([]);
     // State for loading
@@ -55,7 +58,9 @@ export default function HomePage() {
                 {recipes.length > 0 ? (
                     recipes.map(recipe => (
                         <div key={recipe.id} className="col-md-4 mb-4">
-                            <div className="card h-100">
+                            <div className="card h-100"
+                                 onClick={() => navigate(`/recipe/${recipe.id}`)}
+                                 style={{ cursor: 'pointer' }} >
                                 {recipe.imageURL && (
                                     <img src={recipe.imageURL} className="recipe-card-img" alt={recipe.title} />
                                 )}
@@ -67,7 +72,6 @@ export default function HomePage() {
                                             Prep time: {recipe.preparationTime} min | Cook time: {recipe.cookingTime} min
                                         </small>
                                     </p>
-                                    {/* placeholder to link to full recipe page */}
                                 </div>
                             </div>
                         </div>

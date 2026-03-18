@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -142,7 +143,7 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 		&recipe.ModifiedAt,
 		&author.ID,
 		&author.UserName,
-		nutrition.ID,
+		&nutrition.ID,
 		&nutrition.Energy,
 		&nutrition.Calories,
 		&nutrition.Fat,
@@ -155,6 +156,7 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 		&nutrition.Salt,
 	)
 	if err != nil {
+		log.Println("recipe scan", err)
 		return recipe, err
 	}
 
@@ -170,7 +172,7 @@ func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id in
 	defer cancel()
 
 	query := `select i.id, i.ingredient, i.unit, i.image_url, 
-       	ri.quantity, 
+       	ri.quantity 
 		from ingredient i 
 		join recipe_ingredient ri on i.id = ri.ingredient_id
 		where ri.recipe_id = $1
@@ -189,13 +191,14 @@ func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id in
 	for rows.Next() {
 		var ingredientInRecipe model.IngredientInRecipe
 		err := rows.Scan(
-			ingredient.ID,
-			ingredient.Ingredient,
-			ingredient.Unit,
+			&ingredient.ID,
+			&ingredient.Ingredient,
+			&ingredient.Unit,
 			&ingredient.ImageURL,
-			ingredientInRecipe.Quantity,
+			&ingredientInRecipe.Quantity,
 		)
 		if err != nil {
+			log.Println("ingredient scan err:", err)
 			return nil, err
 		}
 
@@ -214,7 +217,7 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	query := `select id, recipe_id, step_sequence, step_description, image_url 
+	query := `select id, step_sequence, step_description, image_url 
 		from instruction 
 		where recipe_id = $1
 	`
@@ -231,12 +234,13 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 	for rows.Next() {
 		var instruction model.RecipeInstruction
 		err := rows.Scan(
-			instruction.ID,
-			instruction.StepSequence,
-			instruction.StepDescription,
+			&instruction.ID,
+			&instruction.StepSequence,
+			&instruction.StepDescription,
 			&instruction.ImageURL,
 		)
 		if err != nil {
+			log.Println("instruction scan err:", err)
 			return nil, err
 		}
 

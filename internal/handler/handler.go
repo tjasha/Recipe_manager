@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/tjasha/Recipe_manager/internal/config"
 	"github.com/tjasha/Recipe_manager/internal/model"
@@ -170,10 +172,21 @@ func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
 	log.Println(recipes)
 }
 
-func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request, id int64) {
+func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
+
+	log.Println("ShowFullRecipe handler called")
+
+	//get id from the URL
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 0, 64)
+	if err != nil {
+		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
+		return
+	}
 
 	recipe, err := h.App.DB.GetRecipeByID(id)
 	log.Println(recipe)
+	log.Println("recipe error", err)
 	if err != nil {
 		http.Error(w, "Failed to retrieve recipe", http.StatusInternalServerError)
 		return
@@ -183,7 +196,7 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request, id int6
 	log.Println(ingredients)
 	if err != nil {
 		http.Error(w, "Failed to retrieve ingredients in the recipe", http.StatusInternalServerError)
-		return
+		// we don't return here, ingredients can be empty
 	}
 
 	recipe.Ingredients = ingredients
@@ -192,12 +205,12 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request, id int6
 	log.Println(instructions)
 	if err != nil {
 		http.Error(w, "Failed to retrieve instructions", http.StatusInternalServerError)
-		return
+		// we don't return here, instructions can be empty
 	}
 
 	recipe.Instructions = instructions
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(recipe)
-	log.Println(recipe)
+	log.Println("RECIPE:", recipe)
 }
