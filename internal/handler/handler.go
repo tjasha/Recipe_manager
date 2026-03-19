@@ -178,39 +178,49 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 
 	//get id from the URL
 	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 0, 64)
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
 		return
 	}
 
+	//get recipe from the database
 	recipe, err := h.App.DB.GetRecipeByID(id)
 	log.Println(recipe)
 	log.Println("recipe error", err)
 	if err != nil {
-		http.Error(w, "Failed to retrieve recipe", http.StatusInternalServerError)
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.NotFound(w, r)
+		} else {
+			log.Printf("ERROR: Could not get recipe by ID: %v", err)
+			http.Error(w, "Failed to retrieve recipe", http.StatusInternalServerError)
+		}
 		return
 	}
 
+	//get ingredients from the database
 	ingredients, err := h.App.DB.GetIngredientsByRecipeID(r.Context(), id)
 	log.Println(ingredients)
 	if err != nil {
+		log.Printf("ERROR: Could not get ingredients: %v", err)
 		http.Error(w, "Failed to retrieve ingredients in the recipe", http.StatusInternalServerError)
 		// we don't return here, ingredients can be empty
 	}
-
+	// add ingredients to the recipe
 	recipe.Ingredients = ingredients
 
+	//get instructions from the database
 	instructions, err := h.App.DB.GetInstructionsByRecipeID(r.Context(), id)
 	log.Println(instructions)
 	if err != nil {
+		log.Printf("ERROR: Could not get instructions: %v", err)
 		http.Error(w, "Failed to retrieve instructions", http.StatusInternalServerError)
 		// we don't return here, instructions can be empty
 	}
-
+	// add instructions to the recipe
 	recipe.Instructions = instructions
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(recipe)
 	log.Println("RECIPE:", recipe)
+	json.NewEncoder(w).Encode(recipe)
 }

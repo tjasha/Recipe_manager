@@ -54,7 +54,7 @@ type Nutrition struct {
 type Ingredient struct {
 	ID         int64   `json:"id"`
 	Ingredient string  `json:"ingredient"`
-	Unit       string  `json:"unit"`
+	Unit       string  `json:"unit"` // kg, l, cup
 	ImageURL   *string `json:"imageURL"`
 }
 
@@ -62,7 +62,6 @@ type Ingredient struct {
 type IngredientInRecipe struct {
 	ID         int64      `json:"id"`
 	Ingredient Ingredient `json:"ingredient"`
-	Unit       string     `json:"unit"`     // kg, l, cup
 	Quantity   float64    `json:"quantity"` // from other table
 }
 

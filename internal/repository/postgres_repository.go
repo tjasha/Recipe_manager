@@ -172,7 +172,7 @@ func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id in
 	defer cancel()
 
 	query := `select i.id, i.ingredient, i.unit, i.image_url, 
-       	ri.quantity 
+       	ri.quantity, ri.id 
 		from ingredient i 
 		join recipe_ingredient ri on i.id = ri.ingredient_id
 		where ri.recipe_id = $1
@@ -184,24 +184,25 @@ func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id in
 	}
 	defer rows.Close()
 
-	var ingredient model.Ingredient
 	var ingredientsInRecipe []model.IngredientInRecipe
 
 	//scan every results
 	for rows.Next() {
 		var ingredientInRecipe model.IngredientInRecipe
 		err := rows.Scan(
-			&ingredient.ID,
-			&ingredient.Ingredient,
-			&ingredient.Unit,
-			&ingredient.ImageURL,
+			&ingredientInRecipe.Ingredient.ID,
+			&ingredientInRecipe.Ingredient.Ingredient,
+			&ingredientInRecipe.Ingredient.Unit,
+			&ingredientInRecipe.Ingredient.ImageURL,
 			&ingredientInRecipe.Quantity,
+			&ingredientInRecipe.ID,
 		)
 		if err != nil {
 			log.Println("ingredient scan err:", err)
 			return nil, err
 		}
 
+		log.Println("ingredientInRecipe:", ingredientInRecipe)
 		ingredientsInRecipe = append(ingredientsInRecipe, ingredientInRecipe)
 	}
 
