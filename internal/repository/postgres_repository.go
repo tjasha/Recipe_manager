@@ -221,6 +221,7 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 	query := `select id, step_sequence, step_description, image_url 
 		from instruction 
 		where recipe_id = $1
+		order by step_sequence ASC
 	`
 
 	rows, err := r.pool.Query(ctx, query, id)
