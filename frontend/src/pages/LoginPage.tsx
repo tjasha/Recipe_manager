@@ -17,6 +17,7 @@ export default function LoginPage() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 // The backend expects an object with a "credential" field
                 body: JSON.stringify({
                     credential: credentialResponse.credential,

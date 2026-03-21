@@ -12,6 +12,7 @@ export default function NavigationBar() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    credentials: 'include',
                 },
             });
 
@@ -54,7 +55,7 @@ export default function NavigationBar() {
                             <Link className="nav-link" to="/shoppingList">Shopping List</Link>
                         </li>
                         <li className="nav-item">
-                            <Link className="nav-link" to="/myRecipes">My Recipes</Link>
+                            <Link className="nav-link" to="/myrecipes">My Recipes</Link>
                         </li>
                         <li className="nav-item">
                             <Link className="nav-link" to="/login">Login</Link>

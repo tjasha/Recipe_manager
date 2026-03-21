@@ -58,7 +58,9 @@ export default function RecipePage() {
     useEffect(() => {
         const fetchRecipe = async () => {
             try {
-                const response = await fetch(`http://localhost:8080/api/recipe/${id}`);
+                const response = await fetch(`http://localhost:8080/api/recipe/${id}`, {
+                    credentials: 'include',
+                });
                 if (!response.ok) {
                     throw new Error(`Recipe not found or server error.`);
                 }

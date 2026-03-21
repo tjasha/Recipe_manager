@@ -120,10 +120,6 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store user info in the session
-	h.App.Session.Put(r.Context(), "userID", user.ID)
-	h.App.Session.Put(r.Context(), "accessLevel", user.AccessLevel)
-
 	// Respond to Frontend with user info
 	response := UserResponse{
 		ID:          user.ID,
@@ -132,12 +128,20 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 		AccessLevel: user.AccessLevel,
 	}
 
+	// Store user info in the session
+	h.App.Session.Put(r.Context(), "userID", user.ID)
+	h.App.Session.Put(r.Context(), "username", user.UserName)
+	h.App.Session.Put(r.Context(), "accessLevel", user.AccessLevel)
+	log.Println("Store user info in the session: ", h.App.Session.Get(r.Context(), "userID"), h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
 // Logout destroys the user's session.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	log.Println("session before destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
+
 	// Destroy the session data
 	err := h.App.Session.Destroy(r.Context())
 	if err != nil {
@@ -151,6 +155,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to renew token", http.StatusInternalServerError)
 		return
 	}
+	log.Println("Session after destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -161,7 +166,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
 
 	recipes, err := h.App.DB.GetAllRecipes(r.Context())
-	log.Println(recipes)
 	if err != nil {
 		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
 		return
@@ -169,12 +173,9 @@ func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(recipes)
-	log.Println(recipes)
 }
 
 func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
-
-	log.Println("ShowFullRecipe handler called")
 
 	//get id from the URL
 	idStr := chi.URLParam(r, "id")
@@ -186,7 +187,6 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 
 	//get recipe from the database
 	recipe, err := h.App.DB.GetRecipeByID(id)
-	log.Println(recipe)
 	log.Println("recipe error", err)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -200,7 +200,6 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 
 	//get ingredients from the database
 	ingredients, err := h.App.DB.GetIngredientsByRecipeID(r.Context(), id)
-	log.Println(ingredients)
 	if err != nil {
 		log.Printf("ERROR: Could not get ingredients: %v", err)
 		http.Error(w, "Failed to retrieve ingredients in the recipe", http.StatusInternalServerError)
@@ -211,7 +210,6 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 
 	//get instructions from the database
 	instructions, err := h.App.DB.GetInstructionsByRecipeID(r.Context(), id)
-	log.Println(instructions)
 	if err != nil {
 		log.Printf("ERROR: Could not get instructions: %v", err)
 		http.Error(w, "Failed to retrieve instructions", http.StatusInternalServerError)
@@ -221,6 +219,25 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 	recipe.Instructions = instructions
 
 	w.Header().Set("Content-Type", "application/json")
-	log.Println("RECIPE:", recipe)
 	json.NewEncoder(w).Encode(recipe)
+}
+
+// ShowAllUsersRecipes shows all recipes of logged in user.
+func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	recipes, err := h.App.DB.GetAllUsersRecipes(r.Context(), userID.(uint))
+	if err != nil {
+		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipes)
+	log.Println(recipes)
 }
