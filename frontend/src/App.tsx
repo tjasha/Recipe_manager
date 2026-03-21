@@ -5,6 +5,7 @@ import MainLayout from "./layouts/MainLayout";
 import LoginPage from "./pages/LoginPage";
 import RecipePage from "./pages/RecipePage";
 import NavigationBar from "./components/NavigationBar";
+import MyRecipesPage from "./pages/MyRecipesPage";
 
 function App() {
     return (
@@ -13,6 +14,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<HomePage></HomePage>} />
                 <Route path="/recipe/:id" element={<RecipePage/>} />
+                <Route path="/myrecipes" element={<MyRecipesPage/>} />
                 <Route path="/login" element={<LoginPage/>} />
                 {/*<Route path="*" element={<NotFound />} />*/}
             </Routes>

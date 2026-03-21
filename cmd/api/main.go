@@ -30,8 +30,11 @@ func main() {
 	session := scs.New()
 	session.Lifetime = 24 * time.Hour
 	session.Cookie.Persist = true
-	session.Cookie.SameSite = http.SameSiteLaxMode
-	session.Cookie.Secure = cfg.InProduction
+	// for cross-origin requests (different ports for FE and BE)
+	// needs to be used SameSite=None in Secure=true.
+	session.Cookie.SameSite = http.SameSiteNoneMode // Allows sending cookies between different domains/ports
+	session.Cookie.Secure = true
+	//session.Cookie.Secure = cfg.InProduction
 
 	// Create the repository implementation
 	dbRepo := repository.NewPostgresRepository(pool)
@@ -45,5 +48,6 @@ func main() {
 	r := router.New(app)
 
 	log.Println("Server running on :8080")
+	// To-Do: in production ListenAndServeTLS for HTTPS needs to be used.
 	http.ListenAndServe(":8080", r)
 }

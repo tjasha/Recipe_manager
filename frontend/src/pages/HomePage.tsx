@@ -26,7 +26,10 @@ export default function HomePage() {
     useEffect(() => {
         const fetchRecipes = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/recipes');
+                const response = await fetch('http://localhost:8080/api/recipes', {
+                    credentials: 'include',
+                });
+
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }

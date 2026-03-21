@@ -78,7 +78,7 @@ func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]model.Recipe,
 	}
 	defer rows.Close()
 
-	var recipes []model.Recipe
+	var recipes = make([]model.Recipe, 0)
 
 	//scan every results
 	for rows.Next() {
@@ -254,4 +254,54 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 	}
 
 	return instructions, nil
+}
+
+// GetAllUsesRecipes retrieves all recipes from specific user from the database.
+func (r *PostgresRepository) GetAllUsersRecipes(ctx context.Context, userID uint) ([]model.Recipe, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `
+		SELECT id, title, description, portion, preparation_time, cooking_time, published, image_url,
+			created_at, modified_at
+		FROM recipe
+		WHERE author = $1
+		ORDER BY modified_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recipes = make([]model.Recipe, 0)
+
+	//scan every results
+	for rows.Next() {
+		var recipe model.Recipe
+		err := rows.Scan(
+			&recipe.ID,
+			&recipe.Title,
+			&recipe.Description,
+			&recipe.Portion,
+			&recipe.PreparationTime,
+			&recipe.CookingTime,
+			&recipe.Published,
+			&recipe.ImageURL,
+			&recipe.CreatedAt,
+			&recipe.ModifiedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		recipes = append(recipes, recipe)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return recipes, nil
 }
