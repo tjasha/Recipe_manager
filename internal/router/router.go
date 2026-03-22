@@ -46,7 +46,9 @@ func New(app *handler.Application) http.Handler {
 		// Recipes routes
 		api.Get("/recipes", h.ShowAllRecipes)
 		api.Get("/recipe/{id}", h.ShowFullRecipe)
+		//chef routes
 		api.Get("/myrecipes", h.ShowAllUsersRecipes)
+		api.Get("/ingredients", h.GetAllIngredients)
 
 	})
 

@@ -305,3 +305,49 @@ func (r *PostgresRepository) GetAllUsersRecipes(ctx context.Context, userID uint
 
 	return recipes, nil
 }
+
+func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select i.id, i.ingredient, i.unit
+		from ingredient i 
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ingredients []model.Ingredient
+
+	//scan every results
+	for rows.Next() {
+		var ingredient model.Ingredient
+		err := rows.Scan(
+			&ingredient.ID,
+			&ingredient.Ingredient,
+			&ingredient.Unit,
+		)
+		if err != nil {
+			log.Println("ingredient scan err:", err)
+			return nil, err
+		}
+
+		log.Println("all saved ingredient:", ingredient)
+		ingredients = append(ingredients, ingredient)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ingredients, nil
+}
+
+//func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipe *model.Recipe) (int, error) {
+//	//var id
+//	err := r.pool.QueryRow(ctx,
+//	return 1, err
+//}

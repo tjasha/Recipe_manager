@@ -241,3 +241,17 @@ func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(recipes)
 	log.Println(recipes)
 }
+
+// GetAllIngredients fatch ingredients for create a new recipe page.
+func (h *Handler) GetAllIngredients(w http.ResponseWriter, r *http.Request) {
+
+	ingredients, err := h.App.DB.GetAllIngredients()
+	if err != nil {
+		http.Error(w, "Failed to retrieve ingredients", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ingredients)
+
+}

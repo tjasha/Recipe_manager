@@ -58,6 +58,9 @@ export default function NavigationBar() {
                             <Link className="nav-link" to="/myrecipes">My Recipes</Link>
                         </li>
                         <li className="nav-item">
+                            <Link className="nav-link" to="/createRecipe">Create Recipe</Link>
+                        </li>
+                        <li className="nav-item">
                             <Link className="nav-link" to="/login">Login</Link>
                         </li>
                         <li className="nav-item">
