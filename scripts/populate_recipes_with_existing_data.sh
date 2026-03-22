@@ -103,48 +103,39 @@ BEGIN
   -- NUTRITION
   -- =========================================================
   INSERT INTO nutrition (
-    energy,
     calories,
     fat,
-    saturated_fat,
     sodium,
     fiber,
     carbohydrate,
     sugar,
     protein,
-    salt
   )
-  VALUES (1980, 475, 21.0, 6.0, 430, 5.0, 32.0, 4.0, 34.0, 1.1)
+  VALUES (475, 21.0, 430, 5.0, 32.0, 4.0, 34.0)
   RETURNING id INTO v_nutrition1_id;
 
   INSERT INTO nutrition (
-    energy,
     calories,
     fat,
-    saturated_fat,
     sodium,
     fiber,
     carbohydrate,
     sugar,
     protein,
-    salt
   )
-  VALUES (1670, 398, 11.0, 4.2, 540, 14.0, 49.0, 8.0, 19.0, 1.4)
+  VALUES (398, 11.0, 540, 14.0, 49.0, 8.0, 19.0)
   RETURNING id INTO v_nutrition2_id;
 
   INSERT INTO nutrition (
-    energy,
     calories,
     fat,
-    saturated_fat,
     sodium,
     fiber,
     carbohydrate,
     sugar,
     protein,
-    salt
   )
-  VALUES (1320, 315, 9.0, 2.8, 170, 7.0, 38.0, 16.0, 12.0, 0.4)
+  VALUES (315, 9.0, 170, 7.0, 38.0, 16.0, 12.0)
   RETURNING id INTO v_nutrition3_id;
 
   -- =========================================================

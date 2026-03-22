@@ -68,25 +68,22 @@ INSERT INTO users (
 -- One nutrition row per recipe
 -- -------------------------------------------------------------------
 INSERT INTO nutrition (
-  energy,
   calories,
   fat,
-  saturated_fat,
   sodium,
   fiber,
   carbohydrate,
   sugar,
   protein,
-  salt
 ) VALUES
   -- 1. Creamy Tomato Pasta
-  (1850, 442, 14.5, 6.2, 520, 6.5, 58.0, 9.0, 14.0, 1.3),
+  (442, 14.5, 520, 6.5, 58.0, 9.0, 14.0),
 
   -- 2. Chicken Rice Bowl
-  (2100, 505, 16.2, 3.8, 610, 5.2, 48.0, 6.0, 35.0, 1.5),
+  (505, 16.2, 610, 5.2, 48.0, 6.0, 35.0),
 
   -- 3. Banana Oat Pancakes
-  (1450, 348, 9.4, 2.1, 280, 5.8, 49.0, 12.0, 13.0, 0.7);
+  (348, 9.4, 280, 5.8, 49.0, 12.0, 13.0);
 
 -- -------------------------------------------------------------------
 -- INGREDIENTS

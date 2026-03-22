@@ -20,16 +20,13 @@ interface Instruction {
 
 interface Nutrition {
     id: number;
-    energy: number | null;
     calories: number | null;
     fat: number | null;
-    saturatedFat: number | null;
     sodium: number | null;
     fiber: number | null;
     carbohydrate: number | null;
     sugar: number | null;
     protein: number | null;
-    salt: number | null;
 }
 
 interface FullRecipe {
@@ -140,20 +137,12 @@ export default function RecipePage() {
                             <table className="table table-striped">
                                 <tbody>
                                 <tr>
-                                    <td>Energy</td>
-                                    <td>{recipe.nutrition.energy} kcal</td>
-                                </tr>
-                                <tr>
                                     <td>Calories</td>
                                     <td>{recipe.nutrition.calories} kcal</td>
                                 </tr>
                                 <tr>
                                     <td>Fat</td>
                                     <td>{recipe.nutrition.fat} g</td>
-                                </tr>
-                                <tr>
-                                    <td>Saturated Fat</td>
-                                    <td>{recipe.nutrition.saturatedFat} g</td>
                                 </tr>
                                 <tr>
                                     <td>Carbohydrate</td>
@@ -170,10 +159,6 @@ export default function RecipePage() {
                                 <tr>
                                     <td>Protein</td>
                                     <td>{recipe.nutrition.protein} g</td>
-                                </tr>
-                                <tr>
-                                    <td>Salt</td>
-                                    <td>{recipe.nutrition.salt} g</td>
                                 </tr>
                                 </tbody>
                             </table>

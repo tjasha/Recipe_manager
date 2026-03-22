@@ -1,0 +1,8 @@
+ALTER TABLE nutrition
+DROP COLUMN IF EXISTS energy;
+
+ALTER TABLE nutrition
+DROP COLUMN IF EXISTS saturated_fat;
+
+ALTER TABLE nutrition
+DROP COLUMN IF EXISTS salt;

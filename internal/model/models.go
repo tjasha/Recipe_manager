@@ -38,16 +38,13 @@ type Recipe struct {
 // Nutrition struct
 type Nutrition struct {
 	ID           int64    `json:"id"`
-	Energy       *int     `json:"energy"`
 	Calories     *int     `json:"calories"`
 	Fat          *float64 `json:"fat"`
-	SaturatedFat *float64 `json:"saturatedFat"`
 	Sodium       *float64 `json:"sodium"`
 	Fiber        *float64 `json:"fiber"`
 	Carbohydrate *float64 `json:"carbohydrate"`
 	Sugar        *float64 `json:"sugar"`
 	Protein      *float64 `json:"protein"`
-	Salt         *float64 `json:"salt"`
 }
 
 // Ingredient struct

@@ -117,8 +117,7 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 	query := `select r.id, r.title, r.description, r.portion, r.preparation_time, r.cooking_time, r.published, 
        r.image_url, r.created_at, r.modified_at,
        u.id, u.user_name, 
-       n.id, n.energy, n.calories, n.fat, n.saturated_fat, n.sodium, n.fiber, n.carbohydrate, n.sugar, 
-       n.protein, n.salt
+       n.id, n.calories, n.fat, n.sodium, n.fiber, n.carbohydrate, n.sugar, n.protein
 		from recipe r  
 		INNER JOIN nutrition n ON r.nutrition_id=n.id
 		INNER JOIN users u ON r.author=u.id 
@@ -144,16 +143,13 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 		&author.ID,
 		&author.UserName,
 		&nutrition.ID,
-		&nutrition.Energy,
 		&nutrition.Calories,
 		&nutrition.Fat,
-		&nutrition.SaturatedFat,
 		&nutrition.Sodium,
 		&nutrition.Fiber,
 		&nutrition.Carbohydrate,
 		&nutrition.Sugar,
 		&nutrition.Protein,
-		&nutrition.Salt,
 	)
 	if err != nil {
 		log.Println("recipe scan", err)
