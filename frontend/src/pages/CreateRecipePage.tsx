@@ -91,7 +91,7 @@ export default function CreateRecipePage() {
             setFormData(prev => ({ ...prev, [name]: checked }));
             return;
         }
-        
+
         let processedValue: string | number = value;
         if (type === 'number') {
             processedValue = value === '' ? 0 : parseFloat(value);
@@ -170,10 +170,10 @@ export default function CreateRecipePage() {
 
         try {
             // TODO: create API: POST /api/recipes
-            const response = await fetch('http://localhost:8080/api/recipes', {
+            const response = await fetch('http://localhost:8080/api/createRecipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include', // Pošlje piškotek s sejo
+                credentials: 'include', // Send cookies
                 body: JSON.stringify(formData),
             });
 

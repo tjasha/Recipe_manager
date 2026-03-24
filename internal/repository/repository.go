@@ -15,4 +15,5 @@ type Repository interface {
 	GetInstructionsByRecipeID(Context context.Context, id int64) ([]model.RecipeInstruction, error)
 	GetAllUsersRecipes(ctx context.Context, userID uint) ([]model.Recipe, error)
 	GetAllIngredients() ([]model.Ingredient, error)
+	CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (*model.Recipe, error)
 }

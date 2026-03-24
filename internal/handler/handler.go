@@ -242,7 +242,7 @@ func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
 	log.Println(recipes)
 }
 
-// GetAllIngredients fatch ingredients for create a new recipe page.
+// GetAllIngredients fetch ingredients for create a new recipe page.
 func (h *Handler) GetAllIngredients(w http.ResponseWriter, r *http.Request) {
 
 	ingredients, err := h.App.DB.GetAllIngredients()
@@ -255,3 +255,23 @@ func (h *Handler) GetAllIngredients(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(ingredients)
 
 }
+
+// SaveRecipe creates a new recipe and save it to the database.
+func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
+	//
+	var recipe model.Recipe
+	err := json.NewDecoder(r.Body).Decode(&recipe)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate
+	if recipe.Title == "" || recipe.Description == "" || recipe.Portion == 0 || recipe.PreparationTime == 0 || recipe.CookingTime == 0
+|| recipe.Ingredients == nil || recipe.Instructions == nil
+{
+http.Error(w, "Missing required fields", http.StatusBadRequest)
+return
+}
+
+
