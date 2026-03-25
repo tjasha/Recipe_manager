@@ -267,6 +267,7 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := context.WithValue(r.Context(), "userID", userID)
+	log.Println("eser in handler: ", ctx.Value("userID"), "just user:", userID)
 
 	// Parse request body into recipeForm
 	var recipeForm model.RecipeForm

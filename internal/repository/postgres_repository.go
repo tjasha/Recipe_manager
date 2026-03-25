@@ -331,11 +331,9 @@ func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
 			&ingredient.Unit,
 		)
 		if err != nil {
-			log.Println("ingredient scan err:", err)
 			return nil, err
 		}
 
-		log.Println("all saved ingredient:", ingredient)
 		ingredients = append(ingredients, ingredient)
 	}
 
@@ -346,10 +344,7 @@ func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
 	return ingredients, nil
 }
 
-func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (model.Recipe, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (*model.Recipe, error) {
 
 	var recipe model.Recipe
 
@@ -357,7 +352,7 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	// beginning of transaction
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return recipe, err
+		return &recipe, err
 	}
 	// makes sure that transaction is rolled back if any of the queries fail
 	defer tx.Rollback(ctx)
@@ -373,7 +368,8 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 		recipeData.Nutrition.Protein,
 	).Scan(&nutritionID)
 	if err != nil {
-		return recipe, err
+		log.Println("nutrition scan err:", err)
+		return &recipe, err
 	}
 
 	// get user id from session
@@ -383,14 +379,14 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	var recipeId int64
 	err = tx.QueryRow(ctx, `
 		INSERT INTO recipe (title, description, portion, preparation_time, cooking_time, 
-		                    published, image_url, nutrition_id, author, created_at, modified_at)
-		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, time.NOW(), time.NOW())
+		                    published, image_url, nutrition_id, author)
+		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		    RETURNING id`,
 		recipeData.Title, recipeData.Description, recipeData.Portion, recipeData.PreparationTime,
 		recipeData.CookingTime, recipeData.Published, recipeData.ImageURL, nutritionID, userId,
 	).Scan(&recipeId)
 	if err != nil {
-		return recipe, err
+		return &recipe, err
 	}
 
 	// insert ingredients
@@ -401,7 +397,7 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 			recipeId, ingredient.IngredientId, ingredient.Quantity,
 		)
 		if err != nil {
-			return recipe, err
+			return &recipe, err
 		}
 	}
 
@@ -413,16 +409,17 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 			recipeId, i+1, instruction.StepDescription,
 		)
 		if err != nil {
-			return recipe, err
+			return &recipe, err
 		}
 	}
 
 	// commit transaction
 	err = tx.Commit(ctx)
 	if err != nil {
-		return recipe, err
+		return &recipe, err
 	}
 
 	recipe.ID = recipeId
-	return recipe, nil
+	log.Println("Recipe created successfully", recipeId)
+	return &recipe, nil
 }
