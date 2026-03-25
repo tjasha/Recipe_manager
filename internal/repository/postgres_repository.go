@@ -301,3 +301,121 @@ func (r *PostgresRepository) GetAllUsersRecipes(ctx context.Context, userID uint
 
 	return recipes, nil
 }
+
+func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `select i.id, i.ingredient, i.unit
+		from ingredient i 
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ingredients []model.Ingredient
+
+	//scan every results
+	for rows.Next() {
+		var ingredient model.Ingredient
+		err := rows.Scan(
+			&ingredient.ID,
+			&ingredient.Ingredient,
+			&ingredient.Unit,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		ingredients = append(ingredients, ingredient)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ingredients, nil
+}
+
+func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (*model.Recipe, error) {
+
+	var recipe model.Recipe
+
+	// we're using transaction here, we want to rollback if any of the queries isn't working properly
+	// beginning of transaction
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return &recipe, err
+	}
+	// makes sure that transaction is rolled back if any of the queries fail
+	defer tx.Rollback(ctx)
+
+	// insert  nutrition and get nutrition id
+	var nutritionID int
+	err = tx.QueryRow(ctx, `
+		INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein)
+		    VALUES ($1, $2, $3, $4, $5, $6, $7) 
+		    RETURNING id`,
+		recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+		recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+		recipeData.Nutrition.Protein,
+	).Scan(&nutritionID)
+	if err != nil {
+		log.Println("nutrition scan err:", err)
+		return &recipe, err
+	}
+
+	// get user id from session
+	userId := ctx.Value("userID").(uint)
+
+	// insert recipe and get id
+	var recipeId int64
+	err = tx.QueryRow(ctx, `
+		INSERT INTO recipe (title, description, portion, preparation_time, cooking_time, 
+		                    published, image_url, nutrition_id, author)
+		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		    RETURNING id`,
+		recipeData.Title, recipeData.Description, recipeData.Portion, recipeData.PreparationTime,
+		recipeData.CookingTime, recipeData.Published, recipeData.ImageURL, nutritionID, userId,
+	).Scan(&recipeId)
+	if err != nil {
+		return &recipe, err
+	}
+
+	// insert ingredients
+	for _, ingredient := range recipeData.Ingredients {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_ingredient (recipe_id, ingredient_id, quantity)
+			VALUES ($1, $2, $3)`,
+			recipeId, ingredient.IngredientId, ingredient.Quantity,
+		)
+		if err != nil {
+			return &recipe, err
+		}
+	}
+
+	// insert instructions
+	for i, instruction := range recipeData.Instructions {
+		_, err = tx.Exec(ctx, `	
+			INSERT INTO instruction (recipe_id, step_sequence, step_description)
+			    VALUES ($1, $2, $3)`,
+			recipeId, i+1, instruction.StepDescription,
+		)
+		if err != nil {
+			return &recipe, err
+		}
+	}
+
+	// commit transaction
+	err = tx.Commit(ctx)
+	if err != nil {
+		return &recipe, err
+	}
+
+	recipe.ID = recipeId
+	log.Println("Recipe created successfully", recipeId)
+	return &recipe, nil
+}

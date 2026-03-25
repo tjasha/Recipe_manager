@@ -69,3 +69,30 @@ type RecipeInstruction struct {
 	StepDescription string `json:"stepDescription"`
 	ImageURL        string `json:"image"`
 }
+
+// ----- Recipe data from frontend form -----
+// IngredientForm is used to recieve ingredient data from frontend form
+type IngredientForm struct {
+	IngredientId int     `json:"ingredientId"`
+	Quantity     float64 `json:"quantity"`
+}
+
+// InstructionForm is used to receive instruction data from frontend form
+type InstructionForm struct {
+	StepSequence    int    `json:"stepSequence"`
+	StepDescription string `json:"stepDescription"`
+}
+
+// RecipeForm is used to receive recipe data from frontend form
+type RecipeForm struct {
+	Title           string            `json:"title"`
+	Description     *string           `json:"description"`
+	Portion         int               `json:"portion"`
+	PreparationTime *int              `json:"preparationTime"`
+	CookingTime     *int              `json:"cookingTime"`
+	ImageURL        *string           `json:"imageURL"`
+	Published       *bool             `json:"published"`
+	Nutrition       *Nutrition        `json:"nutrition"`
+	Ingredients     []IngredientForm  `json:"ingredients"`
+	Instructions    []InstructionForm `json:"instructions"`
+}

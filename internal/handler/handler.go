@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -240,4 +241,55 @@ func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(recipes)
 	log.Println(recipes)
+}
+
+// GetAllIngredients fetch ingredients for create a new recipe page.
+func (h *Handler) GetAllIngredients(w http.ResponseWriter, r *http.Request) {
+
+	ingredients, err := h.App.DB.GetAllIngredients()
+	if err != nil {
+		http.Error(w, "Failed to retrieve ingredients", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ingredients)
+
+}
+
+// SaveRecipe creates a new recipe and save it to the database.
+func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
+
+	// save user id from session to the context
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	ctx := context.WithValue(r.Context(), "userID", userID)
+	log.Println("eser in handler: ", ctx.Value("userID"), "just user:", userID)
+
+	// Parse request body into recipeForm
+	var recipeForm model.RecipeForm
+	err := json.NewDecoder(r.Body).Decode(&recipeForm)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate - check for mandatory fields
+	if recipeForm.Title == "" || recipeForm.Portion == 0 || recipeForm.Ingredients == nil || recipeForm.Instructions == nil {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	// save recipe in the DB
+	recipe, err := h.App.DB.CreateRecipe(ctx, &recipeForm)
+	if err != nil {
+		http.Error(w, "Failed to create recipe", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(recipe)
 }
