@@ -48,8 +48,10 @@ func New(app *handler.Application) http.Handler {
 		api.Get("/recipe/{id}", h.ShowFullRecipe)
 		//chef routes
 		api.Get("/myrecipes", h.ShowAllUsersRecipes)
+		api.Get("/myrecipe/{id}", h.ShowFullRecipe)
 		api.Get("/ingredients", h.GetAllIngredients)
 		api.Post("/createRecipe", h.SaveRecipe)
+		//admin
 
 	})
 
