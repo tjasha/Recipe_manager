@@ -7,6 +7,7 @@ import RecipePage from "./pages/RecipePage";
 import NavigationBar from "./components/NavigationBar";
 import MyRecipesPage from "./pages/MyRecipesPage";
 import CreateRecipePage from "./pages/CreateRecipePage";
+import MyRecipePage from "./pages/MyRecipePage";
 
 function App() {
     return (
@@ -16,6 +17,7 @@ function App() {
                 <Route path="/" element={<HomePage></HomePage>} />
                 <Route path="/recipe/:id" element={<RecipePage/>} />
                 <Route path="/myrecipes" element={<MyRecipesPage/>} />
+                <Route path="/myrecipe/:id" element={<MyRecipePage/>} />
                 <Route path="/createRecipe" element={<CreateRecipePage/>} />
                 <Route path="/login" element={<LoginPage/>} />
                 {/*<Route path="*" element={<NotFound />} />*/}
