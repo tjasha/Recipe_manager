@@ -69,7 +69,7 @@ export default function MyRecipesPage() {
                 <div className="text-center p-5 border rounded">
                     <h4>You haven't created any recipes yet.</h4>
                     <p>Why not create your first one?</p>
-                    <a href="/create" className="btn btn-primary" role="button">Create recipe</a>
+                    <a href="/createRecipe" className="btn btn-primary" role="button">Create recipe</a>
                 </div>
             ) : (
                 // Successfully showing the recipes
@@ -77,7 +77,7 @@ export default function MyRecipesPage() {
                 {recipes.map(recipe => (
                     <div key={recipe.id} className="col-md-4 mb-4">
                         <div className="card h-100"
-                             onClick={() => navigate(`/recipes/${recipe.id}`)}
+                             onClick={() => navigate(`/myrecipe/${recipe.id}`)}
                              style={{ cursor: 'pointer' }} >
                             {recipe.imageURL && (
                                 <img src={recipe.imageURL} className="recipe-card-img" alt={recipe.title} />

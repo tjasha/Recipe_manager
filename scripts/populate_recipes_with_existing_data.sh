@@ -15,10 +15,6 @@ DECLARE
   v_user1_id INT;
   v_user2_id INT;
 
-  v_nutrition1_id INT;
-  v_nutrition2_id INT;
-  v_nutrition3_id INT;
-
   v_recipe1_id INT;
   v_recipe2_id INT;
   v_recipe3_id INT;
@@ -98,45 +94,6 @@ BEGIN
     NULL
   )
   RETURNING id INTO v_user2_id;
-
-  -- =========================================================
-  -- NUTRITION
-  -- =========================================================
-  INSERT INTO nutrition (
-    calories,
-    fat,
-    sodium,
-    fiber,
-    carbohydrate,
-    sugar,
-    protein,
-  )
-  VALUES (475, 21.0, 430, 5.0, 32.0, 4.0, 34.0)
-  RETURNING id INTO v_nutrition1_id;
-
-  INSERT INTO nutrition (
-    calories,
-    fat,
-    sodium,
-    fiber,
-    carbohydrate,
-    sugar,
-    protein,
-  )
-  VALUES (398, 11.0, 540, 14.0, 49.0, 8.0, 19.0)
-  RETURNING id INTO v_nutrition2_id;
-
-  INSERT INTO nutrition (
-    calories,
-    fat,
-    sodium,
-    fiber,
-    carbohydrate,
-    sugar,
-    protein,
-  )
-  VALUES (315, 9.0, 170, 7.0, 38.0, 16.0, 12.0)
-  RETURNING id INTO v_nutrition3_id;
 
   -- =========================================================
   -- INGREDIENTS: find existing or create new
@@ -326,6 +283,7 @@ BEGIN
 
   -- =========================================================
   -- RECIPES
+  -- recipe no longer stores nutrition_id
   -- =========================================================
   INSERT INTO recipe (
     title,
@@ -333,8 +291,8 @@ BEGIN
     portion,
     preparation_time,
     cooking_time,
-    nutrition_id,
     created_at,
+    modified_at,
     author,
     published,
     image_url
@@ -345,7 +303,7 @@ BEGIN
     2,
     15,
     30,
-    v_nutrition1_id,
+    NOW(),
     NOW(),
     v_user1_id,
     TRUE,
@@ -359,8 +317,8 @@ BEGIN
     portion,
     preparation_time,
     cooking_time,
-    nutrition_id,
     created_at,
+    modified_at,
     author,
     published,
     image_url
@@ -371,7 +329,7 @@ BEGIN
     4,
     15,
     35,
-    v_nutrition2_id,
+    NOW(),
     NOW(),
     v_user2_id,
     TRUE,
@@ -385,8 +343,8 @@ BEGIN
     portion,
     preparation_time,
     cooking_time,
-    nutrition_id,
     created_at,
+    modified_at,
     author,
     published,
     image_url
@@ -397,13 +355,79 @@ BEGIN
     1,
     10,
     0,
-    v_nutrition3_id,
+    NOW(),
     NOW(),
     v_user2_id,
     TRUE,
     'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea'
   )
   RETURNING id INTO v_recipe3_id;
+
+  -- =========================================================
+  -- NUTRITION
+  -- =========================================================
+  INSERT INTO nutrition (
+    recipe_id,
+    calories,
+    fat,
+    sodium,
+    fiber,
+    carbohydrate,
+    sugar,
+    protein
+  )
+  VALUES (
+    v_recipe1_id,
+    475,
+    21.0,
+    430,
+    5.0,
+    32.0,
+    4.0,
+    34.0
+  );
+
+  INSERT INTO nutrition (
+    recipe_id,
+    calories,
+    fat,
+    sodium,
+    fiber,
+    carbohydrate,
+    sugar,
+    protein
+  )
+  VALUES (
+    v_recipe2_id,
+    398,
+    11.0,
+    540,
+    14.0,
+    49.0,
+    8.0,
+    19.0
+  );
+
+  INSERT INTO nutrition (
+    recipe_id,
+    calories,
+    fat,
+    sodium,
+    fiber,
+    carbohydrate,
+    sugar,
+    protein
+  )
+  VALUES (
+    v_recipe3_id,
+    315,
+    9.0,
+    170,
+    7.0,
+    38.0,
+    16.0,
+    12.0
+  );
 
   -- =========================================================
   -- INSTRUCTIONS

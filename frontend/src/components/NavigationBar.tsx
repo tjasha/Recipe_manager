@@ -8,7 +8,7 @@ export default function NavigationBar() {
     const handleLogout = async () => {
         try {
             // First, notify the backend to destroy the session
-            const res = await fetch('http://localhost:8080/api/auth/logout', {
+            const res = await fetch('http://localhost:8080/api/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

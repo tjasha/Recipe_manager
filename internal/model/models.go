@@ -45,6 +45,7 @@ type Nutrition struct {
 	Carbohydrate *float64 `json:"carbohydrate"`
 	Sugar        *float64 `json:"sugar"`
 	Protein      *float64 `json:"protein"`
+	RecipeID     *int64   `json:"recipeID"`
 }
 
 // Ingredient struct
@@ -64,10 +65,10 @@ type IngredientInRecipe struct {
 
 // RecipeInstruction struct
 type RecipeInstruction struct {
-	ID              int64  `json:"id"`
-	StepSequence    int    `json:"stepSequence"`
-	StepDescription string `json:"stepDescription"`
-	ImageURL        string `json:"image"`
+	ID              int64   `json:"id"`
+	StepSequence    int     `json:"stepSequence"`
+	StepDescription string  `json:"stepDescription"`
+	ImageURL        *string `json:"image"`
 }
 
 // ----- Recipe data from frontend form -----
