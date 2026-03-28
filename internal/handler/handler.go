@@ -267,7 +267,7 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := context.WithValue(r.Context(), "userID", userID)
-	log.Println("eser in handler: ", ctx.Value("userID"), "just user:", userID)
+	log.Println("user in handler: ", ctx.Value("userID"), "just user:", userID)
 
 	// Parse request body into recipeForm
 	var recipeForm model.RecipeForm
@@ -281,6 +281,14 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 	if recipeForm.Title == "" || recipeForm.Portion <= 0 || recipeForm.Ingredients == nil || len(recipeForm.Instructions) < 1 {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
+	}
+	//check that ingredients are not duplicated
+	for i := 0; i < len(recipeForm.Ingredients); i++ {
+		for j := i + 1; j < len(recipeForm.Ingredients); j++ {
+			if recipeForm.Ingredients[i].IngredientId == recipeForm.Ingredients[j].IngredientId {
+				http.Error(w, "Ingredients are duplicated", http.StatusBadRequest)
+			}
+		}
 	}
 
 	// save recipe in the DB
