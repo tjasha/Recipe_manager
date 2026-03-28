@@ -13,16 +13,16 @@ BEGIN;
 -- Optional cleanup so script can be run multiple times during development
 DELETE FROM recipe_ingredient;
 DELETE FROM instruction;
+DELETE FROM nutrition;
 DELETE FROM recipe;
 DELETE FROM ingredient;
-DELETE FROM nutrition;
 DELETE FROM users;
 
 -- Reset sequences
 ALTER SEQUENCE users_id_seq RESTART WITH 1;
-ALTER SEQUENCE nutrition_id_seq RESTART WITH 1;
 ALTER SEQUENCE ingredient_id_seq RESTART WITH 1;
 ALTER SEQUENCE recipe_id_seq RESTART WITH 1;
+ALTER SEQUENCE nutrition_id_seq RESTART WITH 1;
 ALTER SEQUENCE instruction_id_seq RESTART WITH 1;
 ALTER SEQUENCE recipe_ingredient_id_seq RESTART WITH 1;
 
@@ -64,28 +64,6 @@ INSERT INTO users (
   );
 
 -- -------------------------------------------------------------------
--- NUTRITION
--- One nutrition row per recipe
--- -------------------------------------------------------------------
-INSERT INTO nutrition (
-  calories,
-  fat,
-  sodium,
-  fiber,
-  carbohydrate,
-  sugar,
-  protein,
-) VALUES
-  -- 1. Creamy Tomato Pasta
-  (442, 14.5, 520, 6.5, 58.0, 9.0, 14.0),
-
-  -- 2. Chicken Rice Bowl
-  (505, 16.2, 610, 5.2, 48.0, 6.0, 35.0),
-
-  -- 3. Banana Oat Pancakes
-  (348, 9.4, 280, 5.8, 49.0, 12.0, 13.0);
-
--- -------------------------------------------------------------------
 -- INGREDIENTS
 -- Shared ingredients can repeat across recipes
 -- -------------------------------------------------------------------
@@ -104,14 +82,12 @@ INSERT INTO ingredient (
   ('Salt', 'tsp', 'https://images.unsplash.com/photo-1518110925495-5fe2fda0442f'),
   ('Black pepper', 'tsp', 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d'),
   ('Fresh basil', 'g', 'https://images.unsplash.com/photo-1601004890684-d8cbf643f5f2'),
-
   ('Chicken breast', 'g', 'https://images.unsplash.com/photo-1604503468506-a8da13d82791'),
   ('Rice', 'g', 'https://images.unsplash.com/photo-1586201375761-83865001e31c'),
   ('Broccoli', 'g', 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc'),
   ('Carrot', 'piece', 'https://images.unsplash.com/photo-1447175008436-170170753d51'),
   ('Soy sauce', 'tbsp', 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f'),
   ('Honey', 'tbsp', 'https://images.unsplash.com/photo-1587049352851-8d4e89133924'),
-
   ('Banana', 'piece', 'https://images.unsplash.com/photo-1574226516831-e1dff420e37f'),
   ('Oats', 'g', 'https://images.unsplash.com/photo-1515543904379-3d757afe72e7'),
   ('Egg', 'piece', 'https://images.unsplash.com/photo-1506976785307-8732e854ad03'),
@@ -129,8 +105,8 @@ INSERT INTO recipe (
   portion,
   preparation_time,
   cooking_time,
-  nutrition_id,
   created_at,
+  modified_at,
   author,
   published,
   image_url
@@ -141,7 +117,7 @@ INSERT INTO recipe (
     2,
     10,
     20,
-    1,
+    NOW(),
     NOW(),
     1,
     TRUE,
@@ -153,7 +129,7 @@ INSERT INTO recipe (
     2,
     15,
     20,
-    2,
+    NOW(),
     NOW(),
     2,
     TRUE,
@@ -165,12 +141,34 @@ INSERT INTO recipe (
     2,
     10,
     15,
-    3,
+    NOW(),
     NOW(),
     2,
     TRUE,
     'https://images.unsplash.com/photo-1528207776546-365bb710ee93'
   );
+
+-- -------------------------------------------------------------------
+-- NUTRITION
+-- -------------------------------------------------------------------
+INSERT INTO nutrition (
+  recipe_id,
+  calories,
+  fat,
+  sodium,
+  fiber,
+  carbohydrate,
+  sugar,
+  protein
+) VALUES
+  -- 1. Creamy Tomato Pasta
+  (1, 442, 14.5, 520, 6.5, 58.0, 9.0, 14.0),
+
+  -- 2. Chicken Rice Bowl
+  (2, 505, 16.2, 610, 5.2, 48.0, 6.0, 35.0),
+
+  -- 3. Banana Oat Pancakes
+  (3, 348, 9.4, 280, 5.8, 49.0, 12.0, 13.0);
 
 -- -------------------------------------------------------------------
 -- INSTRUCTIONS

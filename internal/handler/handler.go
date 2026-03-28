@@ -163,10 +163,10 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"message": "Logout successful"}`))
 }
 
-// ShowAllRecipes shows all recipes on the homepage.
-func (h *Handler) ShowAllRecipes(w http.ResponseWriter, r *http.Request) {
+// ShowAllPublishedRecipes shows all published recipes on the homepage.
+func (h *Handler) ShowAllPublishedRecipes(w http.ResponseWriter, r *http.Request) {
 
-	recipes, err := h.App.DB.GetAllRecipes(r.Context())
+	recipes, err := h.App.DB.GetAllPublishedRecipes(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
 		return
@@ -223,8 +223,8 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(recipe)
 }
 
-// ShowAllUsersRecipes shows all recipes of logged in user.
-func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
+// ShowRecipesOfTheUser shows all recipes of logged in user.
+func (h *Handler) ShowRecipesOfTheUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := h.App.Session.Get(r.Context(), "userID")
 	if userID == nil {
@@ -232,7 +232,7 @@ func (h *Handler) ShowAllUsersRecipes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recipes, err := h.App.DB.GetAllUsersRecipes(r.Context(), userID.(uint))
+	recipes, err := h.App.DB.GetAllRecipesFromUser(r.Context(), userID.(uint))
 	if err != nil {
 		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
 		return
