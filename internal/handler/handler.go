@@ -287,6 +287,7 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 		for j := i + 1; j < len(recipeForm.Ingredients); j++ {
 			if recipeForm.Ingredients[i].IngredientId == recipeForm.Ingredients[j].IngredientId {
 				http.Error(w, "Ingredients are duplicated", http.StatusBadRequest)
+				return
 			}
 		}
 	}
