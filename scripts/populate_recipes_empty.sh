@@ -7,7 +7,7 @@ if [ -z "${DB_URL:-}" ]; then
   exit 1
 fi
 
-psql "$DB_URL" <<'SQL'
+psql -v ON_ERROR_STOP=1 "$DB_URL" <<'SQL'
 BEGIN;
 
 -- Optional cleanup so script can be run multiple times during development

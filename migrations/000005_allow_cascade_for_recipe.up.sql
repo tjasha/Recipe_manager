@@ -10,6 +10,9 @@ SET recipe_id = r.id
     FROM recipe r
 WHERE r.nutrition_id = n.id;
 
+DELETE FROM nutrition
+       WHERE recipe_id IS NULL;
+
 ALTER TABLE nutrition
     ALTER COLUMN recipe_id SET NOT NULL;
 

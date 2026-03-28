@@ -52,4 +52,8 @@ ALTER TABLE recipe_ingredient
         FOREIGN KEY (recipe_id)
             REFERENCES recipe(id);
 
+ALTER TABLE recipe_ingredient
+    ALTER COLUMN recipe_id DROP NOT NULL,
+    ALTER COLUMN ingredient_id DROP NOT NULL;
+
 COMMIT;
