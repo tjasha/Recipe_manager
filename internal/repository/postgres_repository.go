@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
@@ -61,7 +62,7 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 //}
 
 // GetAllRecipes retrieves all recipes from the database.
-func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]model.Recipe, error) {
+func (r *PostgresRepository) GetAllPublishedRecipes(ctx context.Context) ([]model.Recipe, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -69,6 +70,7 @@ func (r *PostgresRepository) GetAllRecipes(ctx context.Context) ([]model.Recipe,
 		SELECT id, title, description, portion, preparation_time, cooking_time, published, image_url,
 			created_at, modified_at
 		FROM recipe 
+		WHERE published = true
 		ORDER BY modified_at DESC
 	`
 
@@ -119,14 +121,24 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
        u.id, u.user_name, 
        n.id, n.calories, n.fat, n.sodium, n.fiber, n.carbohydrate, n.sugar, n.protein
 		from recipe r  
-		INNER JOIN nutrition n ON r.nutrition_id=n.id
-		INNER JOIN users u ON r.author=u.id 
+		LEFT JOIN nutrition n ON r.id = n.recipe_id
+		LEFT JOIN users u ON r.author=u.id 
 		where r.id = $1
 		`
 
 	var recipe model.Recipe
-	var nutrition model.Nutrition
-	var author model.User
+
+	//nullable fields (they may not exist, which would cause an error while scanning
+	var authorID sql.NullInt64
+	var authorName sql.NullString
+	var nutritionID sql.NullInt64
+	var calories sql.NullFloat64
+	var fat sql.NullFloat64
+	var sodium sql.NullFloat64
+	var fiber sql.NullFloat64
+	var sugar sql.NullFloat64
+	var protein sql.NullFloat64
+	var carbohydrate sql.NullFloat64
 
 	row := r.pool.QueryRow(ctx, query, id)
 	err := row.Scan(
@@ -140,24 +152,45 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 		&recipe.ImageURL,
 		&recipe.CreatedAt,
 		&recipe.ModifiedAt,
-		&author.ID,
-		&author.UserName,
-		&nutrition.ID,
-		&nutrition.Calories,
-		&nutrition.Fat,
-		&nutrition.Sodium,
-		&nutrition.Fiber,
-		&nutrition.Carbohydrate,
-		&nutrition.Sugar,
-		&nutrition.Protein,
+		&authorID,
+		&authorName,
+		&nutritionID,
+		&calories,
+		&fat,
+		&sodium,
+		&fiber,
+		&carbohydrate,
+		&sugar,
+		&protein,
 	)
 	if err != nil {
 		log.Println("recipe scan", err)
 		return recipe, err
 	}
 
-	recipe.Author = &author
-	recipe.Nutrition = &nutrition
+	//check that author exist
+	if authorID.Valid {
+		recipe.Author = &model.User{
+			ID:       uint(authorID.Int64),
+			UserName: authorName.String,
+		}
+
+	}
+
+	//check that nutrition exist
+	if nutritionID.Valid {
+		caloriesVal := int(calories.Float64)
+		recipe.Nutrition = &model.Nutrition{
+			ID:           nutritionID.Int64,
+			Calories:     &caloriesVal,
+			Fat:          &fat.Float64,
+			Sodium:       &sodium.Float64,
+			Fiber:        &fiber.Float64,
+			Carbohydrate: &carbohydrate.Float64,
+			Sugar:        &sugar.Float64,
+			Protein:      &protein.Float64,
+		}
+	}
 
 	return recipe, nil
 }
@@ -252,8 +285,8 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 	return instructions, nil
 }
 
-// GetAllUsesRecipes retrieves all recipes from specific user from the database.
-func (r *PostgresRepository) GetAllUsersRecipes(ctx context.Context, userID uint) ([]model.Recipe, error) {
+// GetAllRecipesFromUser retrieves all recipes from specific user from the database.
+func (r *PostgresRepository) GetAllRecipesFromUser(ctx context.Context, userID uint) ([]model.Recipe, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -353,21 +386,6 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	// makes sure that transaction is rolled back if any of the queries fail
 	defer tx.Rollback(ctx)
 
-	// insert  nutrition and get nutrition id
-	var nutritionID int
-	err = tx.QueryRow(ctx, `
-		INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein)
-		    VALUES ($1, $2, $3, $4, $5, $6, $7) 
-		    RETURNING id`,
-		recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
-		recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
-		recipeData.Nutrition.Protein,
-	).Scan(&nutritionID)
-	if err != nil {
-		log.Println("nutrition scan err:", err)
-		return &recipe, err
-	}
-
 	// get user id from session
 	userId := ctx.Value("userID").(uint)
 
@@ -375,13 +393,26 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	var recipeId int64
 	err = tx.QueryRow(ctx, `
 		INSERT INTO recipe (title, description, portion, preparation_time, cooking_time, 
-		                    published, image_url, nutrition_id, author)
-		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		                    published, image_url, author)
+		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		    RETURNING id`,
 		recipeData.Title, recipeData.Description, recipeData.Portion, recipeData.PreparationTime,
-		recipeData.CookingTime, recipeData.Published, recipeData.ImageURL, nutritionID, userId,
+		recipeData.CookingTime, recipeData.Published, recipeData.ImageURL, userId,
 	).Scan(&recipeId)
 	if err != nil {
+		return &recipe, err
+	}
+
+	// insert  nutrition
+	_, err = tx.Exec(ctx, `
+		INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein, recipe_id)
+		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+		recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+		recipeData.Nutrition.Protein, recipeId,
+	)
+	if err != nil {
+		log.Println("nutrition scan err:", err)
 		return &recipe, err
 	}
 
