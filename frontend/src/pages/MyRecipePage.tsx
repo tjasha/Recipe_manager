@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 
 interface IngredientInRecipe {
     id: number;
@@ -51,6 +51,8 @@ export default function MyRecipePage() {
     const [recipe, setRecipe] = useState<FullRecipe | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         const fetchRecipe = async () => {
@@ -79,6 +81,32 @@ export default function MyRecipePage() {
         fetchRecipe();
     }, [id]);
 
+    //delete recipe
+    const handleDelete = async (recipeId: number, recipeTitle: string) => {
+        // confirm deletion
+        if (!window.confirm(`Are you sure you want to delete "${recipeTitle}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/deleteRecipe/${recipeId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            if (response.status === 404) {
+                alert("Error: This recipe was already deleted or you don't have permission.");
+            } else if (!response.ok) {
+                throw new Error('Failed to delete the recipe.');
+            } else if (response.ok) {
+                setTimeout(() => navigate(`/myrecipes`), 2000);
+            }
+
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
     if (loading) return <div className="container mt-4"><h2>Loading...</h2></div>;
     if (error) return <div className="container mt-4"><div className="alert alert-danger">{error}</div></div>;
     if (!recipe) return <div className="container mt-4"><h2>Recipe not found.</h2></div>;
@@ -91,7 +119,12 @@ export default function MyRecipePage() {
 
                     <div className="d-grid gap-2 d-md-flex justify-content-md-center">
                         <button className="btn btn-primary mr-4  tabindex=-1">Edit</button>
-                        <button className="btn btn-outline-secondary  tabindex=-1">Delete</button>
+                        <button className="btn btn-outline-secondary  tabindex=-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(recipe.id, recipe.title);
+                                }}
+                        >Delete</button>
                     </div>
 
                     <br/>

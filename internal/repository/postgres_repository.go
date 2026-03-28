@@ -453,25 +453,19 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 
 func (r *PostgresRepository) DeleteRecipe(ctx context.Context, id int64) error {
 
-	// we're using transaction here, we want to rollback if any of the queries isn't working properly
-	// beginning of transaction
-	tx, err := r.pool.Begin(ctx)
+	query := ` DELETE FROM recipe 
+		    WHERE id = $1`
+
+	ex, err := r.pool.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
-	// makes sure that transaction is rolled back if any of the queries fail
-	defer tx.Rollback(ctx)
 
-	// delete recipe from recipe table
-	_, err = tx.Exec(ctx, `
-		DELETE FROM recipe 
-		    WHERE id = $1`,
-		id,
-	)
-	if err != nil {
-		return err
+	// check that something was deleted
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
 	}
 
 	return nil
-
 }
