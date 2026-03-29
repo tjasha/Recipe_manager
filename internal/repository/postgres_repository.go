@@ -450,3 +450,23 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	log.Println("Recipe created successfully", recipeId)
 	return &recipe, nil
 }
+
+func (r *PostgresRepository) DeleteRecipe(ctx context.Context, recipeId int64, userId uint) error {
+
+	query := ` DELETE FROM recipe 
+		    WHERE id = $1
+		    AND author = $2`
+
+	ex, err := r.pool.Exec(ctx, query, recipeId, userId)
+	if err != nil {
+		return err
+	}
+
+	// check that something was deleted
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

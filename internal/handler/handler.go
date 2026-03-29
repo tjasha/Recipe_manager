@@ -302,3 +302,35 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(recipe)
 }
+
+// DeleteRecipe deletes a recipe from the database.
+func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	//get recipe id from the URL
+	idStr := chi.URLParam(r, "id")
+	recipeId, err := strconv.ParseInt(idStr, 10, 64)
+
+	if err != nil {
+		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
+		return
+	}
+	err = h.App.DB.DeleteRecipe(r.Context(), recipeId, userID.(uint))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent) //204, no content
+	log.Println("Recipe", recipeId, " deleted successfully")
+}
