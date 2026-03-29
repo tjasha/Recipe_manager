@@ -185,7 +185,7 @@ export default function CreateRecipePage() {
             const newRecipe = await response.json();
             setSuccess(`Recipe "${newRecipe.title}" created successfully!`);
             // Redirect to the recipe page after saving
-            setTimeout(() => navigate(`/recipe/${newRecipe.id}`), 2000);
+            setTimeout(() => navigate(`/myrecipe/${newRecipe.id}`), 2000);
 
         } catch (err: any) {
             setError(err.message);

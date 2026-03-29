@@ -451,12 +451,13 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	return &recipe, nil
 }
 
-func (r *PostgresRepository) DeleteRecipe(ctx context.Context, id int64) error {
+func (r *PostgresRepository) DeleteRecipe(ctx context.Context, recipeId int64, userId uint) error {
 
 	query := ` DELETE FROM recipe 
-		    WHERE id = $1`
+		    WHERE id = $1
+		    AND author = $2`
 
-	ex, err := r.pool.Exec(ctx, query, id)
+	ex, err := r.pool.Exec(ctx, query, recipeId, userId)
 	if err != nil {
 		return err
 	}

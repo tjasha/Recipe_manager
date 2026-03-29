@@ -314,19 +314,23 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 
 	//get recipe id from the URL
 	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
+	recipeId, err := strconv.ParseInt(idStr, 10, 64)
 
 	if err != nil {
 		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
 		return
 	}
-	err = h.App.DB.DeleteRecipe(r.Context(), id)
+	err = h.App.DB.DeleteRecipe(r.Context(), recipeId, userID.(uint))
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
 		http.Error(w, "Failed to delete recipe", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusNoContent) //204, no content
-	log.Println("Recipe", id, " deleted successfully")
+	log.Println("Recipe", recipeId, " deleted successfully")
 }

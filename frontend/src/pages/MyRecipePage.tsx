@@ -119,7 +119,7 @@ export default function MyRecipePage() {
 
                     <div className="d-grid gap-2 d-md-flex justify-content-md-center">
                         <button className="btn btn-primary mr-4  tabindex=-1">Edit</button>
-                        <button className="btn btn-outline-secondary  tabindex=-1"
+                        <button className="btn btn-outline-secondary"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(recipe.id, recipe.title);
