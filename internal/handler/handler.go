@@ -337,7 +337,7 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 }
 
 type togglePublishPayload struct {
-	Published bool `json:"published"`
+	Published *bool `json:"published"`
 }
 
 // PublishRecipe makes recipe visible for other users.
@@ -364,7 +364,12 @@ func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.App.DB.PublishRecipe(r.Context(), recipeId, payload.Published, userID.(uint))
+	if payload.Published == nil {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	err = h.App.DB.PublishRecipe(r.Context(), recipeId, *payload.Published, userID.(uint))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
