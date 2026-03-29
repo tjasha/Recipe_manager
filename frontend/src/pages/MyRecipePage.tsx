@@ -44,6 +44,7 @@ interface FullRecipe {
     ingredients: IngredientInRecipe[];
     instructions: Instruction[];
     nutrition: Nutrition | null;
+    published: boolean;
 }
 
 export default function MyRecipePage() {
@@ -107,6 +108,33 @@ export default function MyRecipePage() {
         }
     };
 
+    const handleTogglePublish = async (recipeId: number, currentStatus: boolean) => {
+        const newStatus = !currentStatus;
+        try {
+            const response = await fetch(`http://localhost:8080/api/myrecipe/${recipeId}/publish`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ published: newStatus }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update publish status.');
+            }
+
+            if (recipe) {
+                setRecipe({
+                    ...recipe,
+                    published: newStatus, //only update publish, keep other data
+                });
+            }
+
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
+    };
+
+
     if (loading) return <div className="container mt-4"><h2>Loading...</h2></div>;
     if (error) return <div className="container mt-4"><div className="alert alert-danger">{error}</div></div>;
     if (!recipe) return <div className="container mt-4"><h2>Recipe not found.</h2></div>;
@@ -118,7 +146,16 @@ export default function MyRecipePage() {
                     <h1>{recipe.title}</h1>
 
                     <div className="d-grid gap-2 d-md-flex justify-content-md-center">
-                        <button className="btn btn-primary mr-4  tabindex=-1">Edit</button>
+                        <button
+                            className={`btn btn-sm me-2 ${recipe.published ? 'btn-outline-success' : 'btn-success'}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleTogglePublish(recipe.id, recipe.published);
+                            }}
+                        >
+                            {recipe.published ? 'Unpublish' : 'Publish'}
+                        </button>
+                        <button className="btn btn-primary me-2">Edit</button>
                         <button className="btn btn-outline-secondary"
                                 onClick={(e) => {
                                     e.stopPropagation();

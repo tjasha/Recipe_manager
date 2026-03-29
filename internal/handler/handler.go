@@ -334,3 +334,45 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent) //204, no content
 	log.Println("Recipe", recipeId, " deleted successfully")
 }
+
+type togglePublishPayload struct {
+	Published bool `json:"published"`
+}
+
+// PublishRecipe makes recipe visible for other users.
+func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	//get recipe id from the URL
+	idStr := chi.URLParam(r, "id")
+	recipeId, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
+		return
+	}
+
+	// get wished recipe status from the request body
+	var payload togglePublishPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	err = h.App.DB.PublishRecipe(r.Context(), recipeId, payload.Published, userID.(uint))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "Failed to update publish status", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Publish status updated successfully")
+}

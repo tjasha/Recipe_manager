@@ -21,7 +21,7 @@ func New(app *handler.Application) http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		// Allowed origin - frontend
 		AllowedOrigins: []string{"http://localhost:5173"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
 		// Allows cookies / sessions
 		AllowCredentials: true,
@@ -52,6 +52,7 @@ func New(app *handler.Application) http.Handler {
 		api.Get("/ingredients", h.GetAllIngredients)
 		api.Post("/createRecipe", h.SaveRecipe)
 		api.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
+		api.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
 		//admin
 
 	})

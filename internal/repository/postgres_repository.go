@@ -470,3 +470,25 @@ func (r *PostgresRepository) DeleteRecipe(ctx context.Context, recipeId int64, u
 
 	return nil
 }
+
+func (r *PostgresRepository) PublishRecipe(ctx context.Context, recipeId int64, newStatus bool, userId uint) error {
+
+	log.Println("Publish potsgres recipe", recipeId, "userid; ", userId, "status", newStatus)
+	query := `UPDATE recipe
+			SET published = $1, modified_at = NOW()
+			WHERE id = $2
+			AND author = $3`
+
+	ex, err := r.pool.Exec(ctx, query, newStatus, recipeId, userId)
+	if err != nil {
+		log.Println("ERROR:", err)
+		return err
+	}
+
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
