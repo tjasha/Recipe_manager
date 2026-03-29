@@ -17,4 +17,5 @@ type Repository interface {
 	GetAllIngredients() ([]model.Ingredient, error)
 	CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (*model.Recipe, error)
 	DeleteRecipe(ctx context.Context, recipeId int64, userId uint) error
+	PublishRecipe(ctx context.Context, recipeId int64, newStatus bool, userId uint) error
 }
