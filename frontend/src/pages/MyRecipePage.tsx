@@ -44,7 +44,7 @@ interface FullRecipe {
     ingredients: IngredientInRecipe[];
     instructions: Instruction[];
     nutrition: Nutrition | null;
-    published: boolean;
+    published: boolean | null;
 }
 
 export default function MyRecipePage() {
@@ -153,7 +153,7 @@ export default function MyRecipePage() {
                                 handleTogglePublish(recipe.id, recipe.published);
                             }}
                         >
-                            {recipe.published ? 'Unpublish' : 'Publish'}
+                            {recipe.published === true ? 'Unpublish' : 'Publish'}
                         </button>
                         <button className="btn btn-primary me-2">Edit</button>
                         <button className="btn btn-outline-secondary"

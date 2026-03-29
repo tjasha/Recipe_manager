@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -322,7 +323,7 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 	err = h.App.DB.DeleteRecipe(r.Context(), recipeId, userID.(uint))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
 			return
 		}
@@ -365,7 +366,7 @@ func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
 
 	err = h.App.DB.PublishRecipe(r.Context(), recipeId, payload.Published, userID.(uint))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
 			return
 		}

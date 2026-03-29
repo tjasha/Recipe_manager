@@ -473,7 +473,6 @@ func (r *PostgresRepository) DeleteRecipe(ctx context.Context, recipeId int64, u
 
 func (r *PostgresRepository) PublishRecipe(ctx context.Context, recipeId int64, newStatus bool, userId uint) error {
 
-	log.Println("Publish potsgres recipe", recipeId, "userid; ", userId, "status", newStatus)
 	query := `UPDATE recipe
 			SET published = $1, modified_at = NOW()
 			WHERE id = $2
