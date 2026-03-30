@@ -155,7 +155,12 @@ export default function MyRecipePage() {
                         >
                             {recipe.published === true ? 'Unpublish' : 'Publish'}
                         </button>
-                        <button className="btn btn-primary me-2">Edit</button>
+                        <button className="btn btn-primary me-2"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/myrecipe/${recipe.id}/edit`);
+                        }}
+                        >Edit</button>
                         <button className="btn btn-outline-secondary"
                                 onClick={(e) => {
                                     e.stopPropagation();

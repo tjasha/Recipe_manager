@@ -86,6 +86,7 @@ type InstructionForm struct {
 
 // RecipeForm is used to receive recipe data from frontend form
 type RecipeForm struct {
+	ID              int64             `json:"id"`
 	Title           string            `json:"title"`
 	Description     *string           `json:"description"`
 	Portion         int               `json:"portion"`

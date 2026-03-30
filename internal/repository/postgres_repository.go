@@ -491,3 +491,123 @@ func (r *PostgresRepository) PublishRecipe(ctx context.Context, recipeId int64, 
 
 	return nil
 }
+
+func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model.RecipeForm, userId uint) error {
+
+	// we're using transaction here, we want to rollback if any of the queries isn't working properly
+	// beginning of transaction
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	// makes sure that transaction is rolled back if any of the queries fail
+	defer tx.Rollback(ctx)
+
+	// update recipe
+	ex, err := tx.Exec(ctx, `
+		UPDATE recipe
+		SET title = $1, description = $2, portion = $3, preparation_time = $4, cooking_time = $5,
+		    published = $6, image_url = $7, modified_at = NOW()
+		WHERE id = $8
+		AND author = $9`,
+		recipeData.Title, recipeData.Description, recipeData.Portion, recipeData.PreparationTime,
+		recipeData.CookingTime, recipeData.Published, recipeData.ImageURL, recipeData.ID, userId,
+	)
+	if err != nil {
+		log.Println("ERROR recipe update:", err)
+		return err
+	}
+
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows for recipe updated")
+		return sql.ErrNoRows
+	}
+
+	// update  nutrition
+	if recipeData.Nutrition == nil {
+		_, err = tx.Exec(ctx, `DELETE FROM nutrition WHERE recipe_id = $1`, recipeData.ID)
+		if err != nil {
+			return err
+		}
+	} else {
+		ex, err = tx.Exec(ctx, `
+			UPDATE nutrition
+			SET calories = $1, fat = $2, sodium = $3, fiber = $4, carbohydrate = $5, sugar = $6, protein = $7
+			WHERE recipe_id = $8`,
+			recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+			recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+			recipeData.Nutrition.Protein, recipeData.ID,
+		)
+		if err != nil {
+			return err
+		}
+		if ex.RowsAffected() == 0 {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein, recipe_id)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+				recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+				recipeData.Nutrition.Protein, recipeData.ID,
+			)
+			if err != nil {
+				log.Println("nutrition scan err:", err)
+				return err
+			}
+		}
+	}
+
+	// update ingredients
+	// delete all old ingredients for this recipe
+	query := `DELETE FROM recipe_ingredient
+		WHERE recipe_id = $1`
+	ex, err = tx.Exec(ctx, query, recipeData.ID)
+	if err != nil {
+		return err
+	}
+
+	// insert new ingredients
+	for _, ingredient := range recipeData.Ingredients {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO recipe_ingredient (recipe_id, ingredient_id, quantity)
+			VALUES ($1, $2, $3)`,
+			recipeData.ID, ingredient.IngredientId, ingredient.Quantity,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	// update instructions
+	// delete all old instructions for this recipe
+	query = `DELETE FROM instruction
+		WHERE recipe_id = $1`
+	_, err = tx.Exec(ctx, query, recipeData.ID)
+	if err != nil {
+		return err
+	}
+
+	// insert new instructions
+	for i, instruction := range recipeData.Instructions {
+		ex, err = tx.Exec(ctx, `	
+			INSERT INTO instruction (recipe_id, step_sequence, step_description)
+			    VALUES ($1, $2, $3)`,
+			recipeData.ID, i+1, instruction.StepDescription,
+		)
+		if err != nil {
+			return err
+		}
+		if ex.RowsAffected() == 0 {
+			log.Println("`rows for new instructions not added")
+			return sql.ErrNoRows
+		}
+	}
+
+	// commit transaction
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Recipe updated successfully")
+	return nil
+}

@@ -279,7 +279,7 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate - check for mandatory fields
-	if recipeForm.Title == "" || recipeForm.Portion <= 0 || recipeForm.Ingredients == nil || len(recipeForm.Instructions) < 1 {
+	if recipeForm.Title == "" || recipeForm.Portion <= 0 || len(recipeForm.Ingredients) < 1 || len(recipeForm.Instructions) < 1 {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
 	}
@@ -382,4 +382,64 @@ func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Publish status updated successfully")
+}
+
+// EditRecipe updates a recipe in the database.
+func (h *Handler) EditRecipe(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	//get recipe id from the URL
+	idStr := chi.URLParam(r, "id")
+	recipeId, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
+		return
+	}
+
+	var recipeForm model.RecipeForm
+	// Parse request body into recipeForm
+	err = json.NewDecoder(r.Body).Decode(&recipeForm)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	//add recipeId to the recipeForm
+	recipeForm.ID = recipeId
+
+	// Validate - check for mandatory fields
+	if recipeForm.Title == "" || recipeForm.Portion <= 0 || recipeForm.Ingredients == nil || len(recipeForm.Instructions) < 1 {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+	//check that ingredients are not duplicated
+	for i := 0; i < len(recipeForm.Ingredients); i++ {
+		for j := i + 1; j < len(recipeForm.Ingredients); j++ {
+			if recipeForm.Ingredients[i].IngredientId == recipeForm.Ingredients[j].IngredientId {
+				http.Error(w, "Ingredients are duplicated", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	// save recipe in the DB
+	err = h.App.DB.UpdateRecipe(r.Context(), &recipeForm, userID.(uint))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Recipe not found or you do not have permission to edit it.", http.StatusNotFound)
+			return
+		}
+		log.Printf("ERROR: Failed to update recipe: %v", err)
+		http.Error(w, "Failed to update recipe", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode("Recipe updated successfully")
+
 }
