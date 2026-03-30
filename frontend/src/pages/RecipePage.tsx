@@ -90,11 +90,8 @@ export default function RecipePage() {
 
                     <div className="my-4">
                         <span><strong>Servings:</strong> {recipe.portion} | </span>
-                        <span><strong>Prep Time:</strong> {recipe.preparationTime} min | </span>
-                        <span><strong>Cook Time:</strong> {recipe.cookingTime} min</span>
-                        <span><strong>preo:</strong>  { recipe.preparationTime === null ? '-' : recipe.preparationTime} </span>
-                                             {/*           {recipe.published ? 'Yes' : 'No'}</span>*/}
-                                             {/*nutrition: { ...prev.nutrition, [name]: value === '' ? null : parseFloat(value)*/}
+                        <span><strong>Prep Time:</strong> {recipe.preparationTime === null ? '-' : `${recipe.preparationTime} min`} | </span>
+                        <span><strong>Prep Time:</strong> {recipe.cookingTime === null ? '-' : `${recipe.cookingTime} min`} | </span>
                     </div>
 
                     <div className="row">

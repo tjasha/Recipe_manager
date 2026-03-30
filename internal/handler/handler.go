@@ -279,7 +279,7 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate - check for mandatory fields
-	if recipeForm.Title == "" || recipeForm.Portion <= 0 || recipeForm.Ingredients == nil || len(recipeForm.Instructions) < 1 {
+	if recipeForm.Title == "" || recipeForm.Portion <= 0 || len(recipeForm.Ingredients) < 1 || len(recipeForm.Instructions) < 1 {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
 	}

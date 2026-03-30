@@ -64,24 +64,24 @@ export default function EditRecipePage() {
                     title: recipeData.title,
                     description: recipeData.description || '',
                     portion: recipeData.portion,
-                    preparationTime: recipeData.preparationTime || 0,
-                    cookingTime: recipeData.cookingTime || 0,
+                    preparationTime: recipeData.preparationTime ?? '',
+                    cookingTime: recipeData.cookingTime ?? '',
                     imageURL: recipeData.imageURL || '',
                     published: recipeData.published,
                     nutrition: {
-                        calories: recipeData.nutrition?.calories || 0,
-                        fat: recipeData.nutrition?.fat || 0,
-                        protein: recipeData.nutrition?.protein || 0,
-                        carbohydrate: recipeData.nutrition?.carbohydrate || 0,
-                        sodium: recipeData.nutrition?.sodium || 0,
-                        fiber: recipeData.nutrition?.fiber || 0,
-                        sugar: recipeData.nutrition?.sugar || 0,
+                        calories: recipeData.nutrition?.calories ?? '',
+                        fat: recipeData.nutrition?.fat ?? '',
+                        protein: recipeData.nutrition?.protein ?? '',
+                        carbohydrate: recipeData.nutrition?.carbohydrate ?? '',
+                        sodium: recipeData.nutrition?.sodium ?? '',
+                        fiber: recipeData.nutrition?.fiber ?? '',
+                        sugar: recipeData.nutrition?.sugar ?? '',
             },
-                    ingredients: recipeData.ingredients.map((ing: any) => ({
+                    ingredients: (recipeData.ingredients ?? []).map((ing: any) => ({
                         ingredientId: ing.ingredient.id,
                         quantity: ing.quantity,
                     })),
-                    instructions: recipeData.instructions.map((inst: any) => ({
+                    instructions: (recipeData.instructions ?? []).map((inst: any) => ({
                         stepDescription: inst.stepDescription,
                     })),
                 };
@@ -103,14 +103,18 @@ export default function EditRecipePage() {
             setFormData((prev: any) => ({ ...prev, [name]: checked }));
             return;
         }
-        let processedValue: string | number = value;
-        if (type === 'number') processedValue = value === '' ? 0 : parseFloat(value);
-        if (name === 'portion' && processedValue < 1) processedValue = 1;
+        // For number inputs, allow the state to hold an empty string
+        const processedValue = (name === 'portion' && (value === '' || parseFloat(value) < 1)) ? 1 : value;
         setFormData((prev: any) => ({ ...prev, [name]: processedValue }));
+
+        // let processedValue: string | number = value;
+        // if (type === 'number') processedValue = value === '' ? 0 : parseFloat(value);
+        // if (name === 'portion' && processedValue < 1) processedValue = 1;
+        // setFormData((prev: any) => ({ ...prev, [name]: processedValue }));
     };
     const handleNutritionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev: any) => ({ ...prev, nutrition: { ...prev.nutrition, [name]: value === '' ? 0 : parseFloat(value) } }));
+        setFormData((prev: any) => ({ ...prev, nutrition: { ...prev.nutrition, [name]: value } }));
     };
     const handleInstructionChange = (index: number, value: string) => {
         const newInstructions = [...formData.instructions];
@@ -134,22 +138,44 @@ export default function EditRecipePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData) return;
+        const nutritionPayload = {
+            calories: formData.nutrition.calories === '' ? null : parseFloat(formData.nutrition.calories),
+            fat: formData.nutrition.fat === '' ? null : parseFloat(formData.nutrition.fat),
+            protein: formData.nutrition.protein === '' ? null : parseFloat(formData.nutrition.protein),
+            carbohydrate: formData.nutrition.carbohydrate === '' ? null : parseFloat(formData.nutrition.carbohydrate),
+            sodium: formData.nutrition.sodium === '' ? null : parseFloat(formData.nutrition.sodium),
+            fiber: formData.nutrition.fiber === '' ? null : parseFloat(formData.nutrition.fiber),
+            sugar: formData.nutrition.sugar === '' ? null : parseFloat(formData.nutrition.sugar)
+        };
+
+        // Check if all nutrition fields are null
+        const isNutritionEmpty = Object.values(nutritionPayload).every(v => v === null);
+
+        const payload = {
+            ...formData,
+            preparationTime: formData.preparationTime === '' ? null : parseFloat(formData.preparationTime),
+            cookingTime: formData.cookingTime === '' ? null : parseFloat(formData.cookingTime),
+            // If nutrition is empty, send null, otherwise send the cleaned payload
+            nutrition: isNutritionEmpty ? null : nutritionPayload,
+        };
+
         setLoading(true);
         setError(null);
         setSuccess(null);
+
         try {
             const response = await fetch(`http://localhost:8080/api/myrecipe/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
             if (!response.ok) {
                 const message = await response.text();
                 throw new Error(message || 'Failed to update recipe.');
             }
             setSuccess('Recipe updated successfully!');
-            setTimeout(() => navigate(`/myrecipe/${id}`), 2000);
+            setTimeout(() => navigate(`/myrecipe/${id}`), 200);
         } catch (err: any) {
             setError(err.message);
         } finally {
