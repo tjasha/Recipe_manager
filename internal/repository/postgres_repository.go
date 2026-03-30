@@ -524,17 +524,36 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 	}
 
 	// update  nutrition
-	ex, err = tx.Exec(ctx, `
-		UPDATE nutrition
-		SET calories = $1, fat = $2, sodium = $3, fiber = $4, carbohydrate = $5, sugar = $6, protein =$7
-		WHERE recipe_id = $8`,
-		recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
-		recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
-		recipeData.Nutrition.Protein, recipeData.ID,
-	)
-	if err != nil {
-		log.Println("nutrition scan err:", err)
-		return err
+	if recipeData.Nutrition == nil {
+		_, err = tx.Exec(ctx, `DELETE FROM nutrition WHERE recipe_id = $1`, recipeData.ID)
+		if err != nil {
+			return err
+		}
+	} else {
+		ex, err = tx.Exec(ctx, `
+			UPDATE nutrition
+			SET calories = $1, fat = $2, sodium = $3, fiber = $4, carbohydrate = $5, sugar = $6, protein = $7
+			WHERE recipe_id = $8`,
+			recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+			recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+			recipeData.Nutrition.Protein, recipeData.ID,
+		)
+		if err != nil {
+			return err
+		}
+		if ex.RowsAffected() == 0 {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein, recipe_id)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+				recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+				recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+				recipeData.Nutrition.Protein, recipeData.ID,
+			)
+			if err != nil {
+				log.Println("nutrition scan err:", err)
+				return err
+			}
+		}
 	}
 
 	// update ingredients

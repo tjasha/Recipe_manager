@@ -429,7 +429,7 @@ func (h *Handler) EditRecipe(w http.ResponseWriter, r *http.Request) {
 	// save recipe in the DB
 	err = h.App.DB.UpdateRecipe(r.Context(), &recipeForm, userID.(uint))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Recipe not found or you do not have permission to edit it.", http.StatusNotFound)
 			return
 		}

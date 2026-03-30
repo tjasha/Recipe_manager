@@ -49,7 +49,7 @@ export default function EditRecipePage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const recipeResponse = await fetch(`http://localhost:8080/api/recipe/${id}`, { credentials: 'include' });
+                const recipeResponse = await fetch(`http://localhost:8080/api/myrecipe/${id}`, { credentials: 'include' });
                 if (!recipeResponse.ok) throw new Error('Failed to fetch recipe data.');
                 const recipeData = await recipeResponse.json();
 
@@ -73,7 +73,10 @@ export default function EditRecipePage() {
                         fat: recipeData.nutrition?.fat || 0,
                         protein: recipeData.nutrition?.protein || 0,
                         carbohydrate: recipeData.nutrition?.carbohydrate || 0,
-                    },
+                        sodium: recipeData.nutrition?.sodium || 0,
+                        fiber: recipeData.nutrition?.fiber || 0,
+                        sugar: recipeData.nutrition?.sugar || 0,
+            },
                     ingredients: recipeData.ingredients.map((ing: any) => ({
                         ingredientId: ing.ingredient.id,
                         quantity: ing.quantity,
@@ -142,8 +145,8 @@ export default function EditRecipePage() {
                 body: JSON.stringify(formData),
             });
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update recipe.');
+                const message = await response.text();
+                throw new Error(message || 'Failed to update recipe.');
             }
             setSuccess('Recipe updated successfully!');
             setTimeout(() => navigate(`/myrecipe/${id}`), 2000);
