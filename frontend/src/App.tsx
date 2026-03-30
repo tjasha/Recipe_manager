@@ -8,6 +8,7 @@ import NavigationBar from "./components/NavigationBar";
 import MyRecipesPage from "./pages/MyRecipesPage";
 import CreateRecipePage from "./pages/CreateRecipePage";
 import MyRecipePage from "./pages/MyRecipePage";
+import EditRecipePage from "./pages/EditRecipePage";
 
 function App() {
     return (
@@ -19,6 +20,7 @@ function App() {
                 <Route path="/myrecipes" element={<MyRecipesPage/>} />
                 <Route path="/myrecipe/:id" element={<MyRecipePage/>} />
                 <Route path="/createRecipe" element={<CreateRecipePage/>} />
+                <Route path="/myrecipe/:id/edit" element={<EditRecipePage/>} />
                 <Route path="/login" element={<LoginPage/>} />
                 {/*<Route path="*" element={<NotFound />} />*/}
             </Routes>

@@ -53,6 +53,7 @@ func New(app *handler.Application) http.Handler {
 		api.Post("/createRecipe", h.SaveRecipe)
 		api.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
 		api.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
+		api.Put("/myrecipe/{id}", h.EditRecipe)
 		//admin
 
 	})
