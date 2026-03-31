@@ -9,12 +9,12 @@ import (
 )
 
 type Config struct {
-	DB_URL                 string
-	PORT                   string
-	TEST_DB_URL            string
-	Session                *scs.SessionManager
-	InProduction           bool
-	GoogleOauthClientID    string
+	DB_URL                  string
+	PORT                    string
+	TEST_DB_URL             string
+	Session                 *scs.SessionManager
+	InProduction            bool
+	GoogleOauthClientID     string
 	GoogleOauthClientSecret string
 }
 

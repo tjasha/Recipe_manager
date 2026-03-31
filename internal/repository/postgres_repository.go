@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tjasha/Recipe_manager/internal/model"
 )
@@ -61,10 +61,8 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 //	return id, UserName, accessLevel, err
 //}
 
-// GetAllRecipes retrieves all recipes from the database.
+// GetAllPublishedRecipes retrieves all recipes from the database.
 func (r *PostgresRepository) GetAllPublishedRecipes(ctx context.Context) ([]model.Recipe, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 
 	query := `
 		SELECT id, title, description, portion, preparation_time, cooking_time, published, image_url,
@@ -112,9 +110,7 @@ func (r *PostgresRepository) GetAllPublishedRecipes(ctx context.Context) ([]mode
 }
 
 // GetRecipeByID retrieves a recipe from the database by its ID.
-func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func (r *PostgresRepository) GetRecipeByID(ctx context.Context, id int64) (model.Recipe, error) {
 
 	query := `select r.id, r.title, r.description, r.portion, r.preparation_time, r.cooking_time, r.published, 
        r.image_url, r.created_at, r.modified_at,
@@ -197,9 +193,6 @@ func (r *PostgresRepository) GetRecipeByID(id int64) (model.Recipe, error) {
 
 func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id int64) ([]model.IngredientInRecipe, error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
 	query := `select i.id, i.ingredient, i.unit, i.image_url, 
        	ri.quantity, ri.id 
 		from ingredient i 
@@ -244,9 +237,6 @@ func (r *PostgresRepository) GetIngredientsByRecipeID(ctx context.Context, id in
 
 func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id int64) ([]model.RecipeInstruction, error) {
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
 	query := `select id, step_sequence, step_description, image_url 
 		from instruction 
 		where recipe_id = $1
@@ -287,8 +277,6 @@ func (r *PostgresRepository) GetInstructionsByRecipeID(ctx context.Context, id i
 
 // GetAllRecipesFromUser retrieves all recipes from specific user from the database.
 func (r *PostgresRepository) GetAllRecipesFromUser(ctx context.Context, userID uint) ([]model.Recipe, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 
 	query := `
 		SELECT id, title, description, portion, preparation_time, cooking_time, published, image_url,
@@ -335,9 +323,7 @@ func (r *PostgresRepository) GetAllRecipesFromUser(ctx context.Context, userID u
 	return recipes, nil
 }
 
-func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func (r *PostgresRepository) GetAllIngredients(ctx context.Context) ([]model.Ingredient, error) {
 
 	query := `select i.id, i.ingredient, i.unit
 		from ingredient i 
@@ -373,7 +359,7 @@ func (r *PostgresRepository) GetAllIngredients() ([]model.Ingredient, error) {
 	return ingredients, nil
 }
 
-func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model.RecipeForm) (*model.Recipe, error) {
+func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model.RecipeForm, userId uint) (*model.Recipe, error) {
 
 	var recipe model.Recipe
 
@@ -384,10 +370,12 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 		return &recipe, err
 	}
 	// makes sure that transaction is rolled back if any of the queries fail
-	defer tx.Rollback(ctx)
-
-	// get user id from session
-	userId := ctx.Value("userID").(uint)
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil {
+			log.Println("Rollback error:", err)
+		}
+	}(tx, ctx)
 
 	// insert recipe and get id
 	var recipeId int64
@@ -501,7 +489,12 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 		return err
 	}
 	// makes sure that transaction is rolled back if any of the queries fail
-	defer tx.Rollback(ctx)
+	defer func(tx pgx.Tx, ctx context.Context) {
+		err := tx.Rollback(ctx)
+		if err != nil {
+			log.Println("Rollback error:", err)
+		}
+	}(tx, ctx)
 
 	// update recipe
 	ex, err := tx.Exec(ctx, `
@@ -560,7 +553,7 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 	// delete all old ingredients for this recipe
 	query := `DELETE FROM recipe_ingredient
 		WHERE recipe_id = $1`
-	ex, err = tx.Exec(ctx, query, recipeData.ID)
+	_, err = tx.Exec(ctx, query, recipeData.ID)
 	if err != nil {
 		return err
 	}

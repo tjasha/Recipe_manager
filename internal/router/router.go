@@ -36,7 +36,10 @@ func New(app *handler.Application) http.Handler {
 
 	r.Route("/api", func(api chi.Router) {
 		api.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"status":"ok"}`))
+			_, err := w.Write([]byte(`{"status":"ok"}`))
+			if err != nil {
+				return
+			}
 		})
 
 		// Authentication routes
