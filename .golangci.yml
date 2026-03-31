@@ -3,13 +3,8 @@ version: "2"
 run:
   timeout: 3m
 
-linters-settings:
-  presets:
-    - bugs
-    - unused
-  disable-all: true
-
 linters:
+  disable-all: true
   enable:
     - errcheck
     - govet
