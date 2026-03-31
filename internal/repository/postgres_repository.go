@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/jackc/pgx/v5"
@@ -372,7 +373,7 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	// makes sure that transaction is rolled back if any of the queries fail
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
 			log.Println("Rollback error:", err)
 		}
 	}(tx, ctx)
@@ -491,7 +492,7 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 	// makes sure that transaction is rolled back if any of the queries fail
 	defer func(tx pgx.Tx, ctx context.Context) {
 		err := tx.Rollback(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
 			log.Println("Rollback error:", err)
 		}
 	}(tx, ctx)

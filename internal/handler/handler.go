@@ -37,7 +37,7 @@ func New(app *Application) *Handler {
 	}
 }
 
-// Struct for receiving google token from the frontend
+// GoogleToken is a struct for receiving Google token from the frontend
 type GoogleToken struct {
 	Credential string `json:"credential"`
 }
@@ -54,8 +54,13 @@ type UserResponse struct {
 func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 	var token GoogleToken
 
-	body, _ := io.ReadAll(r.Body)
-	err := json.Unmarshal(body, &token)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("ERROR: Cannot read body: %v", err)
+		http.Error(w, "Cannot read request", http.StatusBadRequest)
+		return
+	}
+	err = json.Unmarshal(body, &token)
 	if err != nil {
 		log.Printf("ERROR: Cannot unmarshal token: %v", err)
 		http.Error(w, "Cannot read token", http.StatusBadRequest)
@@ -235,7 +240,7 @@ func (h *Handler) ShowFullRecipe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ShowRecipesOfTheUser shows all recipes of logged in user.
+// ShowRecipesOfTheUser shows all recipes of logged-in user.
 func (h *Handler) ShowRecipesOfTheUser(w http.ResponseWriter, r *http.Request) {
 
 	userID := h.App.Session.Get(r.Context(), "userID")
@@ -244,7 +249,12 @@ func (h *Handler) ShowRecipesOfTheUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	recipes, err := h.App.DB.GetAllRecipesFromUser(r.Context(), userID.(uint))
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session state", http.StatusInternalServerError)
+		return
+	}
+	recipes, err := h.App.DB.GetAllRecipesFromUser(r.Context(), uid)
 	if err != nil {
 		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
 		return
@@ -308,8 +318,13 @@ func (h *Handler) SaveRecipe(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session state", http.StatusInternalServerError)
+		return
+	}
 	// save recipe in the DB
-	recipe, err := h.App.DB.CreateRecipe(r.Context(), &recipeForm, userID.(uint))
+	recipe, err := h.App.DB.CreateRecipe(r.Context(), &recipeForm, uid)
 	if err != nil {
 		http.Error(w, "Failed to create recipe", http.StatusInternalServerError)
 		return
@@ -339,7 +354,12 @@ func (h *Handler) DeleteRecipe(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
 		return
 	}
-	err = h.App.DB.DeleteRecipe(r.Context(), recipeId, userID.(uint))
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session state", http.StatusInternalServerError)
+		return
+	}
+	err = h.App.DB.DeleteRecipe(r.Context(), recipeId, uid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
@@ -358,7 +378,7 @@ type togglePublishPayload struct {
 	Published *bool `json:"published"`
 }
 
-// PublishRecipe makes recipe visible for other users.
+// UpdatePublishRecipe makes recipe visible for other users.
 func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
 
 	userID := h.App.Session.Get(r.Context(), "userID")
@@ -387,7 +407,12 @@ func (h *Handler) UpdatePublishRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.App.DB.PublishRecipe(r.Context(), recipeId, *payload.Published, userID.(uint))
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session state", http.StatusInternalServerError)
+		return
+	}
+	err = h.App.DB.PublishRecipe(r.Context(), recipeId, *payload.Published, uid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.NotFound(w, r)
@@ -447,8 +472,13 @@ func (h *Handler) EditRecipe(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session state", http.StatusInternalServerError)
+		return
+	}
 	// save recipe in the DB
-	err = h.App.DB.UpdateRecipe(r.Context(), &recipeForm, userID.(uint))
+	err = h.App.DB.UpdateRecipe(r.Context(), &recipeForm, uid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Recipe not found or you do not have permission to edit it.", http.StatusNotFound)

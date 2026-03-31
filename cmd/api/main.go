@@ -51,6 +51,6 @@ func main() {
 	// To-Do: in production ListenAndServeTLS for HTTPS needs to be used.
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
 }
