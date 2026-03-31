@@ -393,16 +393,18 @@ func (r *PostgresRepository) CreateRecipe(ctx context.Context, recipeData *model
 	}
 
 	// insert  nutrition
-	_, err = tx.Exec(ctx, `
+	if recipeData.Nutrition != nil {
+		_, err = tx.Exec(ctx, `
 		INSERT INTO nutrition (calories, fat, sodium, fiber, carbohydrate, sugar, protein, recipe_id)
 		    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
-		recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
-		recipeData.Nutrition.Protein, recipeId,
-	)
-	if err != nil {
-		log.Println("nutrition scan err:", err)
-		return &recipe, err
+			recipeData.Nutrition.Calories, recipeData.Nutrition.Fat, recipeData.Nutrition.Sodium,
+			recipeData.Nutrition.Fiber, recipeData.Nutrition.Carbohydrate, recipeData.Nutrition.Sugar,
+			recipeData.Nutrition.Protein, recipeId,
+		)
+		if err != nil {
+			log.Println("nutrition scan err:", err)
+			return &recipe, err
+		}
 	}
 
 	// insert ingredients

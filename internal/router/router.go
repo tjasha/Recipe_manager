@@ -39,7 +39,7 @@ func New(app *handler.Application) http.Handler {
 		api.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			_, err := w.Write([]byte(`{"status":"ok"}`))
 			if err != nil {
-				log.Print("health check write failed: &v", err)
+				log.Printf("health check write failed: %v", err)
 				return
 			}
 		})
