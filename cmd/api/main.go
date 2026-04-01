@@ -11,8 +11,6 @@ import (
 	"github.com/tjasha/Recipe_manager/internal/repository"
 	"github.com/tjasha/Recipe_manager/internal/router"
 
-	//"github.com/golang-migrate/migrate/v4"
-	//"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
@@ -47,7 +45,20 @@ func main() {
 
 	r := router.New(app)
 
+	// --- FIX: Configure a new http.Server with timeouts ---
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,   // max time to read request body and headers
+		WriteTimeout: 10 * time.Second,  // max time to write response
+		IdleTimeout:  120 * time.Second, // max time for connections in idle
+	}
+
 	log.Println("Server running on :8080")
 	// To-Do: in production ListenAndServeTLS for HTTPS needs to be used.
-	http.ListenAndServe(":8080", r)
+	// Use the configured server instead of the default ListenAndServe
+	if err := srv.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
+
 }

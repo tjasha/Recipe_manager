@@ -1,6 +1,7 @@
 package router
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -36,7 +37,11 @@ func New(app *handler.Application) http.Handler {
 
 	r.Route("/api", func(api chi.Router) {
 		api.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"status":"ok"}`))
+			_, err := w.Write([]byte(`{"status":"ok"}`))
+			if err != nil {
+				log.Printf("health check write failed: %v", err)
+				return
+			}
 		})
 
 		// Authentication routes
