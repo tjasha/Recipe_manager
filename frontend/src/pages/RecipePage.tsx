@@ -73,6 +73,41 @@ export default function RecipePage() {
         fetchRecipe();
     }, [id]);
 
+    // Function to manage portions change
+    const handlePortionChange = async (newPortion: number) => {
+        if (!recipe || newPortion < 1) {
+            return;
+        }
+
+        try {
+            // call API to adjust portions
+            const response = await fetch(`http://localhost:8080/api/recipes/${id}/adjust-portion`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ newServingSize: newPortion }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to adjust portions.');
+            }
+
+            // response from API
+            const adjustedIngredients = await response.json();
+
+            // adjust ingredients on the page with new values
+            setRecipe(prev => prev ? {
+                ...prev,
+                portion: newPortion,
+                ingredients: adjustedIngredients
+            } : null);
+
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+
     if (loading) return <div className="container mt-4"><h2>Loading...</h2></div>;
     if (error) return <div className="container mt-4"><div className="alert alert-danger">{error}</div></div>;
     if (!recipe) return <div className="container mt-4"><h2>Recipe not found.</h2></div>;
@@ -88,10 +123,36 @@ export default function RecipePage() {
 
                     <p className="lead">{recipe.description}</p>
 
-                    <div className="my-4">
-                        <span><strong>Servings:</strong> {recipe.portion} | </span>
-                        <span><strong>Prep Time:</strong> {recipe.preparationTime === null ? '-' : `${recipe.preparationTime} min`} | </span>
-                        <span><strong>Prep Time:</strong> {recipe.cookingTime === null ? '-' : `${recipe.cookingTime} min`} | </span>
+                    {/*<div className="my-4">*/}
+                    {/*    <input type="number" name="calories" className="form-control"*/}
+                    {/*           value={recipe.portion}*/}
+                    {/*           onChange={handlePortionChange}*/}
+                    {/*           min="1"/>*/}
+                    {/*    /!*<span><strong>Servings:</strong> {recipe.portion} </span>*!/*/}
+                    {/*</div>*/}
+                    {/*<div className="my-4">*/}
+                    {/*    <span><strong>Prep Time:</strong> {recipe.preparationTime === null ? '-' : `${recipe.preparationTime} min`} | </span>*/}
+                    {/*    <span><strong>Prep Time:</strong> {recipe.cookingTime === null ? '-' : `${recipe.cookingTime} min`} </span>*/}
+                    {/*</div>*/}
+                    <div className="my-4 ">
+                        <div className="align-items-center">
+                            <strong>Servings:</strong>
+                            <button
+                                className="btn btn-outline-secondary btn-sm ms-2"
+                                onClick={() => handlePortionChange(recipe.portion - 1)}
+                            >-</button>
+                            <span className="mx-2" style={{ minWidth: '20px', textAlign: 'center' }}>{recipe.portion}</span>
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => handlePortionChange(recipe.portion + 1)}
+                            >+</button>
+                        </div>
+                    </div>
+                    <div className="my-4  justify-content-between align-items-center">
+                        <div>
+                            <span><strong>Prep Time:</strong> {recipe.preparationTime != null ? `${recipe.preparationTime} min` : '-'} | </span>
+                            <span><strong>Cook Time:</strong> {recipe.cookingTime != null ? `${recipe.cookingTime} min` : '-'}</span>
+                        </div>
                     </div>
 
                     <div className="row">
@@ -99,7 +160,7 @@ export default function RecipePage() {
                             <h3>Ingredients</h3>
                             <ul className="list-group">
                                 {recipe.ingredients.map(ingInRecipe => (
-                                    <li key={ingInRecipe.id} className="list-group-item d-flex align-items-center">
+                                    <li key={ingInRecipe.id} className="list-group-item">
 
                                         {/* show picture if it exist */}
                                         {ingInRecipe.ingredient.imageURL && (
@@ -115,9 +176,9 @@ export default function RecipePage() {
                                                 }}
                                             />
                                         )}
-                                        <span>
-                                            {ingInRecipe.quantity} {ingInRecipe.ingredient.unit} {ingInRecipe.ingredient.ingredient}
-                                        </span>
+
+                                        {parseFloat(ingInRecipe.quantity.toFixed(2))} {ingInRecipe.ingredient.unit} {ingInRecipe.ingredient.ingredient}
+
                                     </li>
                                 ))}
                             </ul>
