@@ -15,6 +15,7 @@ import (
 	"github.com/tjasha/Recipe_manager/internal/config"
 	"github.com/tjasha/Recipe_manager/internal/model"
 	"github.com/tjasha/Recipe_manager/internal/repository"
+	"github.com/tjasha/Recipe_manager/internal/service"
 	"google.golang.org/api/idtoken"
 )
 
@@ -496,4 +497,64 @@ func (h *Handler) EditRecipe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+type adjustPortionPayload struct {
+	NewServingSize int `json:"newServingSize"`
+}
+
+// AdjustServingSize change the amount of servings
+func (h *Handler) AdjustServingSize(w http.ResponseWriter, r *http.Request) {
+
+	//get recipe ID
+	recipeID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid recipe ID", http.StatusBadRequest)
+		return
+	}
+
+	// get servings size
+	var payload adjustPortionPayload
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if payload.NewServingSize <= 0 {
+		http.Error(w, "Serving sze needs to be greater than 0", http.StatusBadRequest)
+		return
+	}
+
+	// get recipe from DB
+	recipe, err := h.App.DB.GetRecipeByID(r.Context(), recipeID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		log.Printf("ERROR: Could not get recipe by ID: %v", err)
+		http.Error(w, "Failed to retrieve recipe", http.StatusInternalServerError)
+		return
+	}
+
+	ingredients, err := h.App.DB.GetIngredientsByRecipeID(r.Context(), recipeID)
+	if err != nil {
+		log.Printf("ERROR: Could not get ingredients: %v", err)
+		http.Error(w, "Could not fetch ingredients", http.StatusInternalServerError)
+		return
+	}
+	recipe.Ingredients = ingredients
+
+	// call ingredients calculation
+	newIngredients, err := service.CalculateIngredientsPerServing(recipe, payload.NewServingSize)
+	if err != nil {
+		log.Printf("ERROR: Could not calculate ingredients: %v", err)
+		http.Error(w, "Could not calculate ingredients", http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(newIngredients)
+	if err != nil {
+		return
+	}
 }
