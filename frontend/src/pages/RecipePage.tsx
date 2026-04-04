@@ -150,8 +150,8 @@ export default function RecipePage() {
                     </div>
                     <div className="my-4  justify-content-between align-items-center">
                         <div>
-                            <span><strong>Prep Time:</strong> {recipe.preparationTime} min | </span>
-                            <span><strong>Cook Time:</strong> {recipe.cookingTime} min</span>
+                            <span><strong>Prep Time:</strong> {recipe.preparationTime != null ? `${recipe.preparationTime} min` : '-'} | </span>
+                            <span><strong>Cook Time:</strong> {recipe.cookingTime != null ? `${recipe.cookingTime} min` : '-'}</span>
                         </div>
                     </div>
 

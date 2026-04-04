@@ -521,7 +521,7 @@ func (h *Handler) AdjustServingSize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if payload.NewServingSize <= 0 {
-		http.Error(w, "Serving sze needs to be greater than 0", http.StatusBadRequest)
+		http.Error(w, "Serving size needs to be greater than 0", http.StatusBadRequest)
 		return
 	}
 
@@ -550,6 +550,7 @@ func (h *Handler) AdjustServingSize(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("ERROR: Could not calculate ingredients: %v", err)
 		http.Error(w, "Could not calculate ingredients", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
