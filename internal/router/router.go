@@ -10,6 +10,17 @@ import (
 	"github.com/tjasha/Recipe_manager/internal/handler"
 )
 
+// Middleware for security headers
+func securityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Allows comunication with google SSO
+		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
+		w.Header().Set("Cross-Origin-Embedder-Policy", "require-corp")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func New(app *handler.Application) http.Handler {
 	r := chi.NewRouter()
 
@@ -17,6 +28,9 @@ func New(app *handler.Application) http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.AllowContentType("application/json"))
+
+	// use security headers
+	r.Use(securityHeadersMiddleware)
 
 	// CORS middleware - allows different origin of frontend and backend
 	r.Use(cors.Handler(cors.Options{
