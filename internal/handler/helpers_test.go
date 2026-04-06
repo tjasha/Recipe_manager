@@ -30,7 +30,7 @@ type testServer struct {
 }
 
 // newTestServer starts new test server with our application and returns it.
-func newTestServer() *testServer {
+func NewTestServer() *testServer {
 	app := newTestApplication()
 	mux := router.New(app)
 	ts := httptest.NewServer(mux)

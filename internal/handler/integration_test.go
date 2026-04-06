@@ -12,7 +12,7 @@ import (
 func TestIntegration_Logout(t *testing.T) {
 
 	// start test server (from helpers_test.go)
-	ts := newTestServer()
+	ts := NewTestServer()
 	defer ts.Close()
 
 	// we should first call login endpoint to create session,
