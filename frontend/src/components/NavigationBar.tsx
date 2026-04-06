@@ -24,8 +24,8 @@ export default function NavigationBar({ user, onLogout }: { user: any | null, on
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    credentials: 'include',
                 },
+                credentials: 'include',
             });
             if (!res.ok) {
                 console.error('Backend logout failed.');

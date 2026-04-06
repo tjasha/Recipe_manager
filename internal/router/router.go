@@ -13,7 +13,7 @@ import (
 // Middleware for security headers
 func securityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allows comunication with google SSO
+		// Allows communication with google SSO
 		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
 		w.Header().Set("Cross-Origin-Embedder-Policy", "require-corp")
 
@@ -66,6 +66,7 @@ func New(app *handler.Application) http.Handler {
 		// Authentication
 		api.Post("/auth/google/verify", h.VerifyGoogleToken)
 		api.Post("/auth/logout", h.Logout)
+		api.Get("/auth/check-session", h.CheckSession)
 
 		// Recipes routes
 		api.Get("/recipes", h.ShowAllPublishedRecipes)
@@ -79,12 +80,12 @@ func New(app *handler.Application) http.Handler {
 		api.Group(func(r chi.Router) {
 			r.Use(h.RequireRole(1))
 
-			api.Get("/myrecipes", h.ShowRecipesOfTheUser)
-			api.Get("/myrecipe/{id}", h.ShowFullRecipe)
-			api.Post("/createRecipe", h.SaveRecipe)
-			api.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
-			api.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
-			api.Put("/myrecipe/{id}", h.EditRecipe)
+			r.Get("/myrecipes", h.ShowRecipesOfTheUser)
+			r.Get("/myrecipe/{id}", h.ShowFullRecipe)
+			r.Post("/createRecipe", h.SaveRecipe)
+			r.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
+			r.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
+			r.Put("/myrecipe/{id}", h.EditRecipe)
 		})
 
 		// Accessible to admins (access level 0)
@@ -92,7 +93,7 @@ func New(app *handler.Application) http.Handler {
 			r.Use(h.RequireRole(0))
 
 			//To-DO
-			//api.Delete("/deleteUser/{id}", h.DeleteUser)
+			//r.Delete("/deleteUser/{id}", h.DeleteUser)
 
 		})
 	})

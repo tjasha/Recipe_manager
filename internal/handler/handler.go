@@ -38,6 +38,35 @@ func New(app *Application) *Handler {
 	}
 }
 
+// CheckSession checks if the session is active and retrieve full user details to send back
+func (h *Handler) CheckSession(w http.ResponseWriter, r *http.Request) {
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "No active session", http.StatusUnauthorized)
+		return
+	}
+
+	// If a session exists, retrieve full user details to send back
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+
+	// send back the data we have in the session
+	username := h.App.Session.Get(r.Context(), "username")
+	accessLevel := h.App.Session.Get(r.Context(), "accessLevel")
+
+	response := UserResponse{
+		ID:          uid,
+		UserName:    username.(string),
+		AccessLevel: accessLevel.(int),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 // RequireRole check access level of the user.
 func (h *Handler) RequireRole(requiredLevel int) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
