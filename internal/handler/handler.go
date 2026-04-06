@@ -150,29 +150,36 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 
 // Logout destroys the user's session.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	log.Println("session before destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
+	log.Println("v logout handlerju")
+	// 1. Uničimo sejo. To je najpomembnejši del.
+	_ = h.App.Session.Destroy(r.Context())
 
-	// Destroy the session data
-	err := h.App.Session.Destroy(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to destroy session", http.StatusInternalServerError)
-		return
-	}
-
-	// Renew the token to ensure the old session is completely invalidated.
-	err = h.App.Session.RenewToken(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to renew token", http.StatusInternalServerError)
-		return
-	}
-	log.Println("Session after destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
-
-	w.Header().Set("Content-Type", "application/json")
+	// 2. Pošljemo preprost odgovor. Ne bomo obnavljali žetona ali pisali kompleksnega JSON-a.
+	// CORS middleware bo sam dodal potrebne glave.
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(`{"message": "Logout successful"}`))
-	if err != nil {
-		return
-	}
+	//log.Println("session before destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
+	//
+	//// Destroy the session data
+	//err := h.App.Session.Destroy(r.Context())
+	//if err != nil {
+	//	http.Error(w, "Failed to destroy session", http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//// Renew the token to ensure the old session is completely invalidated.
+	//err = h.App.Session.RenewToken(r.Context())
+	//if err != nil {
+	//	http.Error(w, "Failed to renew token", http.StatusInternalServerError)
+	//	return
+	//}
+	//log.Println("Session after destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
+	//
+	//w.Header().Set("Content-Type", "application/json")
+	//w.WriteHeader(http.StatusOK)
+	//_, err = w.Write([]byte(`{"message": "Logout successful"}`))
+	//if err != nil {
+	//	return
+	//}
 }
 
 // ShowAllPublishedRecipes shows all published recipes on the homepage.
