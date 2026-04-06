@@ -219,7 +219,12 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	log.Println("v logout handlerju")
 	// destroy session
-	_ = h.App.Session.Destroy(r.Context())
+	err := h.App.Session.Destroy(r.Context())
+	if err != nil {
+		log.Printf("ERROR: Failed to destroy session: %v", err)
+		http.Error(w, "Failed to logout", http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
