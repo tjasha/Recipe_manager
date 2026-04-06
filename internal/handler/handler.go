@@ -38,6 +38,33 @@ func New(app *Application) *Handler {
 	}
 }
 
+// RequireRole check access level of the user.
+func (h *Handler) RequireRole(requiredLevel int) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// check if user is logged in
+			accessLevel := h.App.Session.Get(r.Context(), "accessLevel")
+			if accessLevel == nil {
+				http.Error(w, "Unauthorized: You must be logged in.", http.StatusUnauthorized)
+				return
+			}
+			// check if user has the required access level
+			userLevel, ok := accessLevel.(int)
+			if !ok {
+				http.Error(w, "Invalid session state.", http.StatusInternalServerError)
+				return
+			}
+			// check if level is high enough
+			if userLevel > requiredLevel {
+				http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // GoogleToken is a struct for receiving Google token from the frontend
 type GoogleToken struct {
 	Credential string `json:"credential"`

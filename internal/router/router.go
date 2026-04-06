@@ -10,13 +10,6 @@ import (
 	"github.com/tjasha/Recipe_manager/internal/handler"
 )
 
-func requestLoggerMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("--> INCOMING REQUEST: Method=[%s], Path=[%s]", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
-}
-
 // Middleware for security headers
 func securityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -28,33 +21,9 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-//func manualCorsMiddleware(next http.Handler) http.Handler {
-//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		// Nastavimo glave, ki jih pričakuje brskalnik
-//		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-//		w.Header().Set("Access-Control-Allow-Credentials", "true")
-//		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Credentials")
-//		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-//
-//		// Če je to "preflight" OPTIONS zahteva, jo takoj zaključimo
-//		if r.Method == "OPTIONS" {
-//			w.WriteHeader(http.StatusOK)
-//			return
-//		}
-//
-//		// Za vse ostale zahteve, jih samo pošljemo naprej
-//		next.ServeHTTP(w, r)
-//	})
-//}
-
+// New creates a new router.
 func New(app *handler.Application) http.Handler {
 	r := chi.NewRouter()
-
-	// 1. KORAK: DODAMO DIAGNOSTIČNI LOGGER NA SAM VRH
-	r.Use(requestLoggerMiddleware)
-
-	//// ROCNI MIDDLEWARE
-	//r.Use(manualCorsMiddleware)
 
 	// CORS middleware - allows different origin of frontend and backend
 	r.Use(cors.Handler(cors.Options{
@@ -84,6 +53,9 @@ func New(app *handler.Application) http.Handler {
 	h := handler.New(app)
 
 	r.Route("/api", func(api chi.Router) {
+
+		// Accessible to all users
+		// Health check
 		api.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 			_, err := w.Write([]byte(`{"status":"ok"}`))
 			if err != nil {
@@ -91,8 +63,7 @@ func New(app *handler.Application) http.Handler {
 				return
 			}
 		})
-
-		// Authentication routes
+		// Authentication
 		api.Post("/auth/google/verify", h.VerifyGoogleToken)
 		api.Post("/auth/logout", h.Logout)
 
@@ -100,17 +71,30 @@ func New(app *handler.Application) http.Handler {
 		api.Get("/recipes", h.ShowAllPublishedRecipes)
 		api.Get("/recipe/{id}", h.ShowFullRecipe)
 		api.Post("/recipes/{id}/adjust-portion", h.AdjustServingSize)
-
-		//chef routes
-		api.Get("/myrecipes", h.ShowRecipesOfTheUser)
-		api.Get("/myrecipe/{id}", h.ShowFullRecipe)
 		api.Get("/ingredients", h.GetAllIngredients)
-		api.Post("/createRecipe", h.SaveRecipe)
-		api.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
-		api.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
-		api.Put("/myrecipe/{id}", h.EditRecipe)
-		//admin
 
+		// Routes for logged in users
+		// Accessible to chefs (access level 1)
+
+		api.Group(func(r chi.Router) {
+			r.Use(h.RequireRole(1))
+
+			api.Get("/myrecipes", h.ShowRecipesOfTheUser)
+			api.Get("/myrecipe/{id}", h.ShowFullRecipe)
+			api.Post("/createRecipe", h.SaveRecipe)
+			api.Delete("/deleteRecipe/{id}", h.DeleteRecipe)
+			api.Patch("/myrecipe/{id}/publish", h.UpdatePublishRecipe)
+			api.Put("/myrecipe/{id}", h.EditRecipe)
+		})
+
+		// Accessible to admins (access level 0)
+		api.Group(func(r chi.Router) {
+			r.Use(h.RequireRole(0))
+
+			//To-DO
+			//api.Delete("/deleteUser/{id}", h.DeleteUser)
+
+		})
 	})
 
 	return r
