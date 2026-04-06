@@ -38,6 +38,73 @@ func New(app *Application) *Handler {
 	}
 }
 
+// CheckSession checks if the session is active and retrieve full user details to send back
+func (h *Handler) CheckSession(w http.ResponseWriter, r *http.Request) {
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "No active session", http.StatusUnauthorized)
+		return
+	}
+
+	// If a session exists, retrieve full user details to send back
+	uid, ok := userID.(uint)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+
+	// send back the data we have in the session
+	username, ok := h.App.Session.Get(r.Context(), "username").(string)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+	accessLevel, ok := h.App.Session.Get(r.Context(), "accessLevel").(int)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+
+	response := UserResponse{
+		ID:          uid,
+		UserName:    username,
+		AccessLevel: accessLevel,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error: fail to encode response: %v", err)
+		return
+	}
+}
+
+// RequireRole check access level of the user.
+func (h *Handler) RequireRole(requiredLevel int) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			// check if user is logged in
+			accessLevel := h.App.Session.Get(r.Context(), "accessLevel")
+			if accessLevel == nil {
+				http.Error(w, "Unauthorized: You must be logged in.", http.StatusUnauthorized)
+				return
+			}
+			// check if user has the required access level
+			userLevel, ok := accessLevel.(int)
+			if !ok {
+				http.Error(w, "Invalid session state.", http.StatusInternalServerError)
+				return
+			}
+			// check if level is high enough
+			if userLevel > requiredLevel {
+				http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // GoogleToken is a struct for receiving Google token from the frontend
 type GoogleToken struct {
 	Credential string `json:"credential"`
@@ -150,29 +217,16 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 
 // Logout destroys the user's session.
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	log.Println("session before destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
-
-	// Destroy the session data
+	log.Println("v logout handlerju")
+	// destroy session
 	err := h.App.Session.Destroy(r.Context())
 	if err != nil {
-		http.Error(w, "Failed to destroy session", http.StatusInternalServerError)
+		log.Printf("ERROR: Failed to destroy session: %v", err)
+		http.Error(w, "Failed to logout", http.StatusInternalServerError)
 		return
 	}
 
-	// Renew the token to ensure the old session is completely invalidated.
-	err = h.App.Session.RenewToken(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to renew token", http.StatusInternalServerError)
-		return
-	}
-	log.Println("Session after destroy: ", h.App.Session.Get(r.Context(), "username"), h.App.Session.Get(r.Context(), "accessLevel"))
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(`{"message": "Logout successful"}`))
-	if err != nil {
-		return
-	}
 }
 
 // ShowAllPublishedRecipes shows all published recipes on the homepage.

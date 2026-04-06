@@ -2,7 +2,7 @@ import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
-export default function LoginPage() {
+export default function LoginPage({ onLoginSuccess }: { onLoginSuccess: (user: any) => void }) {
     const [loginError, setLoginError] = useState<string | null>(null);
     const navigate = useNavigate();
 
@@ -26,10 +26,9 @@ export default function LoginPage() {
 
             if (res.ok) {
                 const user = await res.json();
+                onLoginSuccess(user);
                 console.log('Backend login successful. User:', user);
                 // The backend has set a session cookie.
-                // Now, navigate to the main part of the application.
-                navigate('/');
             } else {
                 // Handle errors from the backend (e.g., invalid token, server issue)
                 console.error('Backend login failed.');

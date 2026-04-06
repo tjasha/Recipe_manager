@@ -169,17 +169,25 @@ export default function CreateRecipePage() {
         setSuccess(null);
 
         try {
-            // TODO: create API: POST /api/recipes
             const response = await fetch('http://localhost:8080/api/createRecipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include', // Send cookies
                 body: JSON.stringify(formData),
             });
-
+            //user is not logged in
+            if (response.status === 401) {
+                setError('You must be logged in to create a recipe.');
+                return;
+            }
+            //other errors
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to create recipe.');
+                try {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                } catch (jsonError) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
             }
 
             const newRecipe = await response.json();
