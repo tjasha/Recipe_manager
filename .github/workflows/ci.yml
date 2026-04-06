@@ -27,8 +27,11 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      - name: Run tests
+      - name: Run unit tests
         run: go test ./...
+
+      - name: Run integration tests
+        run: go test -tags=integration ./...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7

@@ -64,3 +64,9 @@ For session management I am using SCS - https://github.com/alexedwards/scs
 ## Google OAuth
 
 For managing users, Google OAuth is used
+
+## Testing
+
+To run tests use
+- unit tests: `go test ./...`
+- integration tests: `go test -tags=integration ./...`
