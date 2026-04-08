@@ -607,3 +607,42 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 	log.Println("Recipe updated successfully")
 	return nil
 }
+
+func (r *PostgresRepository) GetAllUsers(ctx context.Context, user *model.User) ([]model.User, error) {
+
+	query := `select id, user_name, email, access_level, created_at, modified_at
+		from users 
+	`
+
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+
+	//scan every results
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.ID,
+			&user.UserName,
+			&user.Email,
+			&user.AccessLevel,
+			&user.CreatedAt,
+			&user.ModifiedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}

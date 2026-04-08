@@ -613,3 +613,34 @@ func (h *Handler) AdjustServingSize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) ReturnAllUsers(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	// check that user has admin rights
+	accessLevel, ok := h.App.Session.Get(r.Context(), "accessLevel").(int)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+	if accessLevel > 1 {
+		http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+		return
+	}
+
+	users, err := h.App.DB.GetAllUsers(r.Context(), &model.User{})
+	if err != nil {
+		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		return
+	}
+}

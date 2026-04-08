@@ -11,6 +11,7 @@ type MockRepository struct {
 	ExpectError bool
 	User        *model.User
 	Recipe      model.Recipe
+	Users       []model.User
 }
 
 // --- This is not used yet, just ready to start testing ---
@@ -59,4 +60,12 @@ func (m *MockRepository) PublishRecipe(ctx context.Context, recipeId int64, newS
 }
 func (m *MockRepository) UpdateRecipe(ctx context.Context, recipeData *model.RecipeForm, userID uint) error {
 	return nil
+}
+
+func (m *MockRepository) GetAllUsers(ctx context.Context, user *model.User) ([]model.User, error) {
+	if m.ExpectError {
+		return nil, context.DeadlineExceeded
+	}
+
+	return m.Users, nil
 }
