@@ -135,14 +135,27 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var payload *idtoken.Payload
 	// Validate the token
-	payload, err := idtoken.Validate(r.Context(), token.Credential, h.App.Config.GoogleOauthClientID)
-	if err != nil {
-		log.Printf("ERROR: Invalid token: %v", err)
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
+	// skip validation for mock repository
+	if mockRepo, ok := h.App.DB.(*repository.MockRepository); ok && mockRepo.SkipGoogleTokenValidation {
+		// simulate successful validation and mock payload that we need later
+		payload = &idtoken.Payload{
+			Claims: map[string]interface{}{
+				"email": "test@example.com",
+				"name":  "Test User",
+				"sub":   "test-google-id",
+			},
+		}
+	} else {
+		// Validate token for is not mock
+		payload, err = idtoken.Validate(r.Context(), token.Credential, h.App.Config.GoogleOauthClientID)
+		if err != nil {
+			log.Printf("ERROR: Invalid token: %v", err)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
 	}
-
 	claims := payload.Claims
 	log.Println(claims)
 
@@ -627,12 +640,12 @@ func (h *Handler) ReturnAllUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid session data", http.StatusInternalServerError)
 		return
 	}
-	if accessLevel > 1 {
+	if accessLevel > 0 {
 		http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
 		return
 	}
 
-	users, err := h.App.DB.GetAllUsers(r.Context(), &model.User{})
+	users, err := h.App.DB.GetAllUsers(r.Context(), 100, 0)
 	if err != nil {
 		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
 		return

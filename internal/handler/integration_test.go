@@ -3,12 +3,50 @@
 package handler_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"testing"
+
+	"github.com/tjasha/Recipe_manager/internal/model"
+	"github.com/tjasha/Recipe_manager/internal/repository"
 )
 
 // ---- Integration tests for handler.go ----
 
+// helper function to simulate login
+func performLogin(t *testing.T, ts *TestServer, userToLogIn *model.User) *http.Client {
+
+	// access mock repository
+	db := ts.Application.DB
+	// type assertion to make sure that we're using mock repository
+	mockRepo, ok := db.(*repository.MockRepository)
+	if !ok {
+		t.Fatal("Could not assert DB to *repository.MockRepository")
+	}
+
+	// set up test user
+	mockRepo.User = userToLogIn
+	mockRepo.SkipGoogleTokenValidation = true
+
+	// creating face google token
+	tokenPayload := map[string]string{"credential": "mock-google-token"}
+	body, _ := json.Marshal(tokenPayload)
+
+	// calling real login endpoint
+	res, err := ts.Client.Post(ts.URL+"/api/auth/google/verify", "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		t.Fatalf("Login request failed: %v", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("Login failed with status: %d", res.StatusCode)
+	}
+
+	// return client that now has saved session cookie
+	return ts.Client
+}
+
+// Test for log out
 func TestIntegration_Logout(t *testing.T) {
 
 	// start test server (from helpers_test.go)
@@ -16,7 +54,7 @@ func TestIntegration_Logout(t *testing.T) {
 	defer ts.Close()
 
 	// we should first call login endpoint to create session,
-	//for this test we'll just set sesssion manually on the server
+	//for this test we'll just set session manually on the server
 
 	// send POST request
 	res, err := ts.Client.Post(ts.URL+"/api/auth/logout", "application/json", nil)
@@ -29,4 +67,69 @@ func TestIntegration_Logout(t *testing.T) {
 		t.Errorf("Logout integration test returned wrong status code: got %v want %v", res.StatusCode, http.StatusOK)
 	}
 	// Here we should check if cookies in response are deleted or changed
+}
+
+// Test for getting all users
+func TestIntegration_ReturnAllUsers(t *testing.T) {
+
+	testCases := []struct {
+		name           string
+		expectedStatus int
+		userToLogIn    *model.User
+	}{
+		{
+			name:           "Admin requests all users",
+			expectedStatus: http.StatusOK,
+			userToLogIn:    &model.User{ID: 1, UserName: "Admin User", Email: "admin@example.com", AccessLevel: 0},
+		},
+		{
+			name:           "Chef requests all users",
+			expectedStatus: http.StatusForbidden,
+			userToLogIn:    &model.User{ID: 1, UserName: "Chef User", Email: "chef@example.com", AccessLevel: 1},
+		},
+		{
+			name:           "Guest requests all users",
+			expectedStatus: http.StatusUnauthorized,
+			userToLogIn:    nil, // No user logged in
+		},
+	}
+
+	for _, tc := range testCases {
+		ts := NewTestServer()
+		defer ts.Close()
+
+		loggedInUser := &http.Client{}
+		if tc.userToLogIn != nil {
+			loggedInUser = performLogin(t, ts, tc.userToLogIn)
+		}
+
+		res, err := loggedInUser.Get(ts.URL + "/api/users")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// check results
+		if res.StatusCode != tc.expectedStatus {
+			t.Errorf("expected status %d; got %d", tc.expectedStatus, res.StatusCode)
+		}
+	}
+
+	t.Run("Get all users as chef", func(t *testing.T) {
+		ts := NewTestServer()
+		defer ts.Close()
+
+		// create admin user and log in
+		chefUser := &model.User{ID: 1, UserName: "Chef User", Email: "chef@example.com", AccessLevel: 1}
+		loggedInUser := performLogin(t, ts, chefUser)
+
+		res, err := loggedInUser.Get(ts.URL + "/api/users")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// check results
+		if res.StatusCode != http.StatusForbidden {
+			t.Errorf("expected status %d; got %d", http.StatusForbidden, res.StatusCode)
+		}
+	})
 }

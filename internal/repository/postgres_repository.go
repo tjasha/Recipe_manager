@@ -608,13 +608,15 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 	return nil
 }
 
-func (r *PostgresRepository) GetAllUsers(ctx context.Context, user *model.User) ([]model.User, error) {
+func (r *PostgresRepository) GetAllUsers(ctx context.Context, limit, offset int) ([]model.User, error) {
 
 	query := `select id, user_name, email, access_level, created_at, modified_at
 		from users 
+		order by id
+		limit $1 offset $2
 	`
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
 	}

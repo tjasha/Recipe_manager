@@ -8,10 +8,11 @@ import (
 
 // MockRepository is a mock repository for testing
 type MockRepository struct {
-	ExpectError bool
-	User        *model.User
-	Recipe      model.Recipe
-	Users       []model.User
+	ExpectError               bool
+	User                      *model.User
+	Recipe                    model.Recipe
+	Users                     []model.User
+	SkipGoogleTokenValidation bool
 }
 
 // --- This is not used yet, just ready to start testing ---
@@ -62,7 +63,7 @@ func (m *MockRepository) UpdateRecipe(ctx context.Context, recipeData *model.Rec
 	return nil
 }
 
-func (m *MockRepository) GetAllUsers(ctx context.Context, user *model.User) ([]model.User, error) {
+func (m *MockRepository) GetAllUsers(ctx context.Context, limit, offset int) ([]model.User, error) {
 	if m.ExpectError {
 		return nil, context.DeadlineExceeded
 	}

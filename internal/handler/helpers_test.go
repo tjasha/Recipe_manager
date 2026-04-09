@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/alexedwards/scs/v2/memstore"
+	"github.com/tjasha/Recipe_manager/internal/config"
 	"github.com/tjasha/Recipe_manager/internal/handler"
 	"github.com/tjasha/Recipe_manager/internal/repository"
 	"github.com/tjasha/Recipe_manager/internal/router"
@@ -15,23 +17,32 @@ import (
 //      repeatedly needed in unit and integration tests -------
 
 // newTestApplication creates and return new testing instance.
-func newTestApplication() *handler.Application {
+func NewTestApplication() *handler.Application {
+	store := memstore.New()
 	session := scs.New()
+	session.Store = store
+
+	testConfig := &config.Config{
+		GoogleOauthClientID: "test-client-id",
+	}
+
 	return &handler.Application{
+		Config:  testConfig,
 		Session: session,
 		DB:      &repository.MockRepository{},
 	}
 }
 
 // testServer struct including test server and client.
-type testServer struct {
+type TestServer struct {
 	*httptest.Server
-	Client *http.Client
+	Client      *http.Client
+	Application *handler.Application
 }
 
 // newTestServer starts new test server with our application and returns it.
-func NewTestServer() *testServer {
-	app := newTestApplication()
+func NewTestServer() *TestServer {
+	app := NewTestApplication()
 	mux := router.New(app)
 	ts := httptest.NewServer(mux)
 
@@ -40,8 +51,9 @@ func NewTestServer() *testServer {
 	client := ts.Client()
 	client.Jar = jar
 
-	return &testServer{
-		Server: ts,
-		Client: client,
+	return &TestServer{
+		Server:      ts,
+		Client:      client,
+		Application: app,
 	}
 }
