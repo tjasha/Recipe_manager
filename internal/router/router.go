@@ -93,8 +93,8 @@ func New(app *handler.Application) http.Handler {
 			r.Use(h.RequireRole(0))
 
 			r.Get("/admin/users", h.ReturnAllUsers)
-			//r.Delete("/deleteUser/{id}", h.DeleteUser)
-
+			r.Delete("/admin/users/{id}", h.DeleteUser)
+			r.Patch("/admin/users/{id}", h.UpdateUser)
 		})
 	})
 

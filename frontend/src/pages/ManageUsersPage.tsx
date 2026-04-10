@@ -6,7 +6,7 @@ interface User {
     name: string;
     email: string;
     accessLevel: number;
-    state: number;
+    state: string;
 }
 
 // recognise logged in user
@@ -14,7 +14,7 @@ interface CurrentUser {
     id: number;
 }
 
-export default function DeleteUsersPage({ currentUser }: { currentUser: CurrentUser | null }) {
+export default function ManageUsersPage({ currentUser }: { currentUser: CurrentUser | null }) {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -73,13 +73,17 @@ export default function DeleteUsersPage({ currentUser }: { currentUser: CurrentU
     };
 
     // --- Update user role or status  ---
-    const handleUpdateUser = async (userId: number, field: 'access_level' | 'state', value: number) => {
+    const handleUpdateUser = async (
+        userId: number,
+        field: 'access_level' | 'state',
+        value: number | string) => {
         try {
+            const payload = { [field]: value };
             const response = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ [field]: value }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -88,9 +92,13 @@ export default function DeleteUsersPage({ currentUser }: { currentUser: CurrentU
 
             // locally update state to reflect the change
             setUsers(prevUsers =>
-                prevUsers.map(u =>
-                    u.id === userId ? { ...u, [field === 'access_level' ? 'accessLevel' : field]: value } : u
-                )
+                prevUsers.map(u =>{
+                    if (u.id === userId) {
+                        const updatedField = field === 'access_level' ? 'accessLevel' : 'state';
+                        return { ...u, [updatedField]: value };
+                    }
+                    return u;
+                })
             );
         } catch (err: any) {
             alert(`Error: ${err.message}`);
@@ -144,12 +152,12 @@ export default function DeleteUsersPage({ currentUser }: { currentUser: CurrentU
                                 <select
                                     className="form-select form-select-sm"
                                     value={user.state}
-                                    onChange={(e) => handleUpdateUser(user.id, 'state', Number(e.target.value))}
+                                    onChange={(e) => handleUpdateUser(user.id, 'state', e.target.value)}
                                     disabled={!currentUser || user.id === currentUser.id}
                                     aria-label={`Status for ${user.name}`}
                                 >
-                                    <option value={0}>Active</option>
-                                    <option value={1}>Deactivated</option>
+                                    <option value={'active'}>Active</option>
+                                    <option value={'deactivated'}>Deactivated</option>
                                 </select>
                             </td>
                             <td>

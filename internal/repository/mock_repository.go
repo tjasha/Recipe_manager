@@ -70,3 +70,24 @@ func (m *MockRepository) GetAllUsers(ctx context.Context, limit, offset int) ([]
 
 	return m.Users, nil
 }
+
+func (m *MockRepository) DeleteUser(ctx context.Context, userId int) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
+	return nil
+}
+
+func (m *MockRepository) UpdateUserRole(ctx context.Context, userId, role int) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
+	return nil
+}
+
+func (m *MockRepository) UpdateUserState(ctx context.Context, userId int, state string) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
+	return nil
+}

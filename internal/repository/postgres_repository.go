@@ -610,7 +610,7 @@ func (r *PostgresRepository) UpdateRecipe(ctx context.Context, recipeData *model
 
 func (r *PostgresRepository) GetAllUsers(ctx context.Context, limit, offset int) ([]model.User, error) {
 
-	query := `select id, user_name, email, access_level, created_at, modified_at
+	query := `select id, user_name, email, access_level, state, created_at, modified_at
 		from users 
 		order by id
 		limit $1 offset $2
@@ -632,6 +632,7 @@ func (r *PostgresRepository) GetAllUsers(ctx context.Context, limit, offset int)
 			&user.UserName,
 			&user.Email,
 			&user.AccessLevel,
+			&user.State,
 			&user.CreatedAt,
 			&user.ModifiedAt,
 		)
@@ -647,4 +648,61 @@ func (r *PostgresRepository) GetAllUsers(ctx context.Context, limit, offset int)
 	}
 
 	return users, nil
+}
+
+func (r *PostgresRepository) DeleteUser(ctx context.Context, managedUser int) error {
+	query := `DELETE FROM users
+		WHERE id = $1
+	`
+
+	ex, err := r.pool.Exec(ctx, query, managedUser)
+	if err != nil {
+		return err
+	}
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func (r *PostgresRepository) UpdateUserRole(ctx context.Context, userId, role int) error {
+
+	query := `UPDATE users
+		SET access_level = $1, modified_at = NOW()
+		WHERE id = $2
+	`
+
+	log.Println(query, role, userId)
+	ex, err := r.pool.Exec(ctx, query, role, userId)
+	if err != nil {
+		return err
+	}
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
+	}
+
+	return nil
+}
+
+func (r *PostgresRepository) UpdateUserState(ctx context.Context, userId int, state string) error {
+
+	query := `UPDATE users
+		SET state = $1, modified_at = NOW()
+		WHERE id = $2
+	`
+
+	log.Println(query, state, userId)
+	ex, err := r.pool.Exec(ctx, query, state, userId)
+	if err != nil {
+		return err
+	}
+	if ex.RowsAffected() == 0 {
+		log.Println("No rows")
+		return sql.ErrNoRows
+	}
+
+	return nil
 }

@@ -11,7 +11,7 @@ import MyRecipePage from "./pages/MyRecipePage";
 import EditRecipePage from "./pages/EditRecipePage";
 import RequireAuth from './components/RequireAuth';
 import CheckSession from './components/CheckSession';
-import DeleteUsersPage from './pages/DeleteUsersPage';
+import ManageUsersPage from './pages/ManageUsersPage';
 import RequireRole from './components/RequireRole';
 
 // User interface to follow if user is logged in
@@ -107,7 +107,7 @@ function App() {
                         // we use both guards
                         <RequireAuth user={user}>
                             <RequireRole user={user} allowedRoles={[0]}>
-                                <DeleteUsersPage currentUser={user} />
+                                <ManageUsersPage currentUser={user} />
                             </RequireRole>
                         </RequireAuth>
                     }

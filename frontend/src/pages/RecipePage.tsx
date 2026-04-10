@@ -117,23 +117,11 @@ export default function RecipePage() {
             <div className="row">
                 <div className="col-md-8 offset-md-2">
                     <h1>{recipe.title}</h1>
-                    <p className="text-muted">By {recipe.author.name}</p>
-
+                    <p className="text-muted">By {recipe.author!= null ? recipe.author.name : 'deleted author'}</p>
                     {recipe.imageURL && <img src={recipe.imageURL} alt={recipe.title} className="img-fluid rounded mb-4" />}
 
                     <p className="lead">{recipe.description}</p>
 
-                    {/*<div className="my-4">*/}
-                    {/*    <input type="number" name="calories" className="form-control"*/}
-                    {/*           value={recipe.portion}*/}
-                    {/*           onChange={handlePortionChange}*/}
-                    {/*           min="1"/>*/}
-                    {/*    /!*<span><strong>Servings:</strong> {recipe.portion} </span>*!/*/}
-                    {/*</div>*/}
-                    {/*<div className="my-4">*/}
-                    {/*    <span><strong>Prep Time:</strong> {recipe.preparationTime === null ? '-' : `${recipe.preparationTime} min`} | </span>*/}
-                    {/*    <span><strong>Prep Time:</strong> {recipe.cookingTime === null ? '-' : `${recipe.cookingTime} min`} </span>*/}
-                    {/*</div>*/}
                     <div className="my-4 ">
                         <div className="align-items-center">
                             <strong>Servings:</strong>
