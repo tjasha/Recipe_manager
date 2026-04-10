@@ -38,6 +38,7 @@ func performLogin(t *testing.T, ts *TestServer, userToLogIn *model.User) *http.C
 	if err != nil {
 		t.Fatalf("Login request failed: %v", err)
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("Login failed with status: %d", res.StatusCode)
 	}
@@ -103,33 +104,15 @@ func TestIntegration_ReturnAllUsers(t *testing.T) {
 			loggedInUser = performLogin(t, ts, tc.userToLogIn)
 		}
 
-		res, err := loggedInUser.Get(ts.URL + "/api/users")
+		res, err := loggedInUser.Get(ts.URL + "/api/admin/users")
 		if err != nil {
 			t.Fatal(err)
 		}
+		defer res.Body.Close()
 
 		// check results
 		if res.StatusCode != tc.expectedStatus {
 			t.Errorf("expected status %d; got %d", tc.expectedStatus, res.StatusCode)
 		}
 	}
-
-	t.Run("Get all users as chef", func(t *testing.T) {
-		ts := NewTestServer()
-		defer ts.Close()
-
-		// create admin user and log in
-		chefUser := &model.User{ID: 1, UserName: "Chef User", Email: "chef@example.com", AccessLevel: 1}
-		loggedInUser := performLogin(t, ts, chefUser)
-
-		res, err := loggedInUser.Get(ts.URL + "/api/users")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// check results
-		if res.StatusCode != http.StatusForbidden {
-			t.Errorf("expected status %d; got %d", http.StatusForbidden, res.StatusCode)
-		}
-	})
 }

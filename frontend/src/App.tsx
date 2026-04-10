@@ -11,6 +11,8 @@ import MyRecipePage from "./pages/MyRecipePage";
 import EditRecipePage from "./pages/EditRecipePage";
 import RequireAuth from './components/RequireAuth';
 import CheckSession from './components/CheckSession';
+import DeleteUsersPage from './pages/DeleteUsersPage';
+import RequireRole from './components/RequireRole';
 
 // User interface to follow if user is logged in
 interface User {
@@ -67,9 +69,9 @@ function App() {
                 <Route
                     path="/myrecipes"
                     element={
-                    <RequireAuth user={user}>
-                        <MyRecipesPage />
-                    </RequireAuth>
+                        <RequireAuth user={user}>
+                            <MyRecipesPage />
+                        </RequireAuth>
                     }
                 />
                 <Route
@@ -93,6 +95,20 @@ function App() {
                     element={
                         <RequireAuth user={user}>
                             <EditRecipePage />
+                        </RequireAuth>
+                    }
+                />
+
+                {/* Admin paths - only shown if user is admin */}
+                {/*components are wrapped in RequireRole guard*/}
+                <Route
+                    path="/admin/users"
+                    element={
+                        // we use both guards
+                        <RequireAuth user={user}>
+                            <RequireRole user={user} allowedRoles={[0]}>
+                                <DeleteUsersPage currentUser={user} />
+                            </RequireRole>
                         </RequireAuth>
                     }
                 />

@@ -92,7 +92,7 @@ func New(app *handler.Application) http.Handler {
 		api.Group(func(r chi.Router) {
 			r.Use(h.RequireRole(0))
 
-			r.Get("/users", h.ReturnAllUsers)
+			r.Get("/admin/users", h.ReturnAllUsers)
 			//r.Delete("/deleteUser/{id}", h.DeleteUser)
 
 		})

@@ -74,7 +74,7 @@ export default function NavigationBar({ user, onLogout }: { user: any | null, on
                                 </li>
                                 {user.accessLevel === 0 && (
                                     <li className="nav-item">
-                                        <Link className="nav-link" to="/admin">Admin Panel</Link>
+                                        <Link className="nav-link" to="/admin/users">Manage users</Link>
                                     </li>
                                 )}
                             </>

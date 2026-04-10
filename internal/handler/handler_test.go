@@ -13,7 +13,7 @@ import (
 // testing logout handler
 func TestHandler_Logout(t *testing.T) {
 	// set up testing application (from helpers_test.go)
-	app := newTestApplication()
+	app := NewTestApplication()
 
 	// prepare http request, recorder, mock handler
 	req, _ := http.NewRequest("POST", "/api/auth/logout", nil)
