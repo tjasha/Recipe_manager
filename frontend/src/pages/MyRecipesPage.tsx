@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 interface Recipe {
     id: number;
@@ -26,24 +27,21 @@ export default function MyRecipesPage() {
     useEffect(() => {
         const fetchRecipes = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/myrecipes', {
-                    credentials: 'include',
-                });
+                const response = await api.get('/myrecipes');
+                setRecipes(response.data);
+            } catch (err:any) {
                 //user is not logged in
-                if (response.status === 401) {
+                if (err.response && err.response.status === 401) {
                     setError('You must be logged in to view this page.');
                     setLoading(false);
                     return;
-                }
-                if (!response.ok) {
-                    setError('Something went wrong while fetching your recipes.');
-                    setLoading(false);
+                } else if (err.response && err.response.status === 500) {
+                    setError('Internal server error. Please try again later.');
+                    console.error(err);
                     return;
+                } else {
+                    setError('Failed to connect to the server. Please try again later.');
                 }
-                const data: Recipe[] = await response.json();
-                setRecipes(data);
-            } catch (err:any) {
-                setError('Failed to connect to the server. Please try again later.');
                 console.error(err);
             } finally {
                 setLoading(false);

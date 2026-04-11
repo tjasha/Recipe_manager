@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import api from '../api/client';
 
 interface User {
     id: number;
@@ -20,24 +21,14 @@ export default function NavigationBar({ user, onLogout }: { user: any | null, on
     const handleLogout = async () => {
         try {
             // First, notify the backend to destroy the session
-            const res = await fetch('http://localhost:8080/api/auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-            if (!res.ok) {
-                console.error('Backend logout failed.');
-            }
+            await api.post('/auth/logout');
         } catch (error) {
-            console.error('Network error during logout:', error);
+            console.error('Backend logout failed:', error);
         } finally {
             // Proceed with frontend logout even if network fails
             googleLogout()
             onLogout();
             navigate('/login');
-
         }
     };
 

@@ -1,6 +1,7 @@
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import api from '../api/client';
 
 export default function LoginPage({ onLoginSuccess }: { onLoginSuccess: (user: any) => void }) {
     const [loginError, setLoginError] = useState<string | null>(null);
@@ -12,32 +13,19 @@ export default function LoginPage({ onLoginSuccess }: { onLoginSuccess: (user: a
 
         try {
             // Send the ID token to your backend for verification and session creation
-            const res = await fetch('http://localhost:8080/api/auth/google/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                // The backend expects an object with a "credential" field
-                body: JSON.stringify({
-                    credential: credentialResponse.credential,
-                }),
+            const res = await api.post('/auth/google/verify', {
+                credential: credentialResponse.credential,
             });
 
-            if (res.ok) {
-                const user = await res.json();
-                onLoginSuccess(user);
-                console.log('Backend login successful. User:', user);
-                // The backend has set a session cookie.
-            } else {
-                // Handle errors from the backend (e.g., invalid token, server issue)
-                console.error('Backend login failed.');
-                setLoginError('Login failed on the server. Please try again.');
-            }
-        } catch (error) {
-            // Handle network errors
-            console.error('Network error during login:', error);
-            setLoginError('A network error occurred. Please check your connection.');
+            const user = res.data;
+            onLoginSuccess(user);
+            console.log('Backend login successful.');
+            // The backend has set a session cookie.
+
+        } catch {
+            // Handle errors from the backend (e.g., invalid token, server issue)
+            console.error('Backend login failed.');
+            setLoginError('Login failed on the server. Please try again.');
         }
     };
 

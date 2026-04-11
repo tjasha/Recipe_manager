@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 interface Recipe {
     id: number;
@@ -26,15 +27,8 @@ export default function HomePage() {
     useEffect(() => {
         const fetchRecipes = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/recipes', {
-                    credentials: 'include',
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data: Recipe[] = await response.json();
-                setRecipes(data);
+                const response = await api.get(`/recipes`);
+                setRecipes(response.data);
             } catch (err) {
                 setError('Failed to fetch recipes. Please try again later.');
                 console.error(err);
