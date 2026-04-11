@@ -674,7 +674,6 @@ func (r *PostgresRepository) UpdateUserRole(ctx context.Context, userId, role in
 		WHERE id = $2
 	`
 
-	log.Println(query, role, userId)
 	ex, err := r.pool.Exec(ctx, query, role, userId)
 	if err != nil {
 		return err

@@ -96,23 +96,86 @@ func TestIntegration_ReturnAllUsers(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ts := NewTestServer()
-		defer ts.Close()
+		t.Run(tc.name, func(t *testing.T) {
+			ts := NewTestServer()
+			defer ts.Close()
 
-		loggedInUser := &http.Client{}
-		if tc.userToLogIn != nil {
-			loggedInUser = performLogin(t, ts, tc.userToLogIn)
-		}
+			loggedInUser := &http.Client{}
+			if tc.userToLogIn != nil {
+				loggedInUser = performLogin(t, ts, tc.userToLogIn)
+			}
 
-		res, err := loggedInUser.Get(ts.URL + "/api/admin/users")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer res.Body.Close()
+			res, err := loggedInUser.Get(ts.URL + "/api/admin/users")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer res.Body.Close()
 
-		// check results
-		if res.StatusCode != tc.expectedStatus {
-			t.Errorf("expected status %d; got %d", tc.expectedStatus, res.StatusCode)
-		}
+			// check results
+			if res.StatusCode != tc.expectedStatus {
+				t.Errorf("expected status %d; got %d", tc.expectedStatus, res.StatusCode)
+			}
+		})
+	}
+}
+
+// Test for deleting a user
+func TestIntegration_DeleteUser_Authorization(t *testing.T) {
+
+	testCases := []struct {
+		name           string
+		expectedStatus int
+		userToLogIn    *model.User
+		targetUserID   string
+	}{
+		{
+			name:           "Admin deletes another user",
+			expectedStatus: http.StatusNoContent,
+			userToLogIn:    &model.User{ID: 1, UserName: "Admin User", Email: "admin@example.com", AccessLevel: 0},
+			targetUserID:   "2",
+		},
+		{
+			name:           "Admin tries to delete self",
+			expectedStatus: http.StatusForbidden,
+			userToLogIn:    &model.User{ID: 1, UserName: "Admin User", Email: "admin@example.com", AccessLevel: 0},
+			targetUserID:   "1",
+		},
+		{
+			name:           "Chef tries to delete a user",
+			expectedStatus: http.StatusForbidden,
+			userToLogIn:    &model.User{ID: 2, UserName: "Chef User", Email: "chef@example.com", AccessLevel: 1},
+			targetUserID:   "1",
+		},
+		{
+			name:           "Unauthorized user tries to delete a user",
+			expectedStatus: http.StatusUnauthorized,
+			userToLogIn:    nil, // No user logged in
+			targetUserID:   "1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ts := NewTestServer()
+			defer ts.Close()
+
+			// log in user if required
+			loggedInUser := &http.Client{}
+			if tc.userToLogIn != nil {
+				loggedInUser = performLogin(t, ts, tc.userToLogIn)
+			}
+
+			// prepare delete request
+			req, _ := http.NewRequest("DELETE", ts.URL+"/api/admin/users/"+tc.targetUserID, nil)
+			res, err := loggedInUser.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer res.Body.Close()
+
+			if res.StatusCode != tc.expectedStatus {
+				t.Errorf("expected status %d; got %d", tc.expectedStatus, res.StatusCode)
+			}
+		})
 	}
 }

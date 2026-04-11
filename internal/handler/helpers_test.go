@@ -57,3 +57,20 @@ func NewTestServer() *TestServer {
 		Application: app,
 	}
 }
+
+// NewAuthenticatedTestHandler creates chain of handlers, which simulate logged in user
+// It's called with userID, accessLevel and final handler that we want to test.
+func NewAuthenticatedTestHandler(app *handler.Application, userID uint, accessLevel int, finalHandler http.HandlerFunc) http.Handler {
+	// "Injector" middleware, that put information about logged in user in the session.
+	injector := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Here context is  already ready by LoadAndSave.
+		app.Session.Put(r.Context(), "userID", userID)
+		app.Session.Put(r.Context(), "accessLevel", accessLevel)
+
+		// call handler that we're testing.
+		finalHandler(w, r)
+	})
+
+	// Return injector wrapped in session middleware.
+	return app.Session.LoadAndSave(injector)
+}

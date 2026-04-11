@@ -65,51 +65,45 @@ func TestUnit_ReturnAllUsers(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		ts := NewTestServer()
-		defer ts.Close()
+		t.Run(tc.name, func(t *testing.T) {
+			ts := NewTestServer()
+			defer ts.Close()
 
-		// set up testing application, data, DB, handler
-		app := NewTestApplication()
+			// set up testing application, data, DB, handler
+			app := NewTestApplication()
 
-		expectedUsers := []model.User{{ID: 1, UserName: "Test User"}}
-		app.DB.(*repository.MockRepository).Users = expectedUsers
+			expectedUsers := []model.User{{ID: 1, UserName: "Test User"}}
+			app.DB.(*repository.MockRepository).Users = expectedUsers
 
-		h := handler.New(app)
+			h := handler.New(app)
 
-		// simulating middleware chain - create middleware that save data in the session
-		//it's done after LoadAndSave and before testing handler
-		injector := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// here context is already ready by LoadAndSave
-			app.Session.Put(r.Context(), "userID", uint(1))
-			app.Session.Put(r.Context(), "accessLevel", tc.accessLevel)
-			// now really call handler
-			h.ReturnAllUsers(w, r)
+			// call helper to authenticate handler
+			testHandler := NewAuthenticatedTestHandler(app, 1, tc.accessLevel, h.ReturnAllUsers)
+
+			// create http request, recorder, mock handler
+			req, _ := http.NewRequest("GET", "/api/admin/users", nil)
+			rr := httptest.NewRecorder()
+			//handlerWithSession.ServeHTTP(rr, req)
+			testHandler.ServeHTTP(rr, req)
+
+			// checking results
+			if rr.Code != tc.expectedStatus {
+				t.Errorf("expected status %d; got %d", tc.expectedStatus, rr.Code)
+			}
+
+			if tc.expectedStatus == http.StatusOK {
+				// checking correct response JSON
+				var actualUsers []model.User
+				if err := json.NewDecoder(rr.Body).Decode(&actualUsers); err != nil {
+					t.Fatalf("Failed to decode response body: %v", err)
+				}
+				if len(actualUsers) != tc.expectedLen {
+					t.Errorf("unexpected number of users returned: want %v got %v", tc.expectedLen, len(actualUsers))
+				}
+				if actualUsers[0].UserName != tc.expectedUserName {
+					t.Errorf("unexpected user saved in session: want %v got %v", tc.expectedUserName, actualUsers[0].UserName)
+				}
+			}
 		})
-		// Wrap injector with middleware
-		handlerWithSession := app.Session.LoadAndSave(injector)
-
-		// create http request, recorder, mock handler
-		req, _ := http.NewRequest("GET", "/api/admin/users", nil)
-		rr := httptest.NewRecorder()
-		handlerWithSession.ServeHTTP(rr, req)
-
-		// checking results
-		if rr.Code != tc.expectedStatus {
-			t.Errorf("expected status %d; got %d", tc.expectedStatus, rr.Code)
-		}
-
-		if tc.expectedStatus == http.StatusOK {
-			// checking correct response JSON
-			var actualUsers []model.User
-			if err := json.NewDecoder(rr.Body).Decode(&actualUsers); err != nil {
-				t.Fatalf("Failed to decode response body: %v", err)
-			}
-			if len(actualUsers) != tc.expectedLen {
-				t.Errorf("unexpected number of users returned: want %v got %v", tc.expectedLen, len(actualUsers))
-			}
-			if actualUsers[0].UserName != tc.expectedUserName {
-				t.Errorf("unexpected user saved in session: want %v got %v", tc.expectedUserName, actualUsers[0].UserName)
-			}
-		}
 	}
 }

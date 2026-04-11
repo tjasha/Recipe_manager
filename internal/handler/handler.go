@@ -684,6 +684,14 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid user ID", http.StatusBadRequest)
 		return
 	}
+
+	// user can't delete himself
+	userIDInt := int(userID.(uint))
+	if managedUserId == userIDInt {
+		http.Error(w, "Forbidden: You can't delete yourself.", http.StatusForbidden)
+		return
+	}
+
 	err = h.App.DB.DeleteUser(r.Context(), managedUserId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
