@@ -1,6 +1,8 @@
 import './App.css'
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { useState } from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import HomePage from './pages/HomePage';
 import LoginPage from "./pages/LoginPage";
 import RecipePage from "./pages/RecipePage";
@@ -52,6 +54,19 @@ function App() {
 
     return (
         <>
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                aria-label
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
+
             {/* sending state and function for log out to the component */}
             <NavigationBar user={user} onLogout={handleLogout} />
 

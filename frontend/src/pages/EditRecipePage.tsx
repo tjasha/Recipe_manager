@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../api/client';
 
 const IngredientAdder = ({ allIngredients, onAdd }: { allIngredients: any[], onAdd: (id: number, qty: number) => void }) => {
     const [selectedId, setSelectedId] = useState<number | ''>('');
@@ -49,13 +50,12 @@ export default function EditRecipePage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const recipeResponse = await fetch(`http://localhost:8080/api/myrecipe/${id}`, { credentials: 'include' });
-                if (!recipeResponse.ok) throw new Error('Failed to fetch recipe data.');
-                const recipeData = await recipeResponse.json();
+                const recipeResponse = await api.get(`/myrecipe/${id}`);
+                const recipeData = recipeResponse.data;
 
-                const ingredientsResponse = await fetch('http://localhost:8080/api/ingredients');
-                if (!ingredientsResponse.ok) throw new Error('Failed to fetch ingredients.');
-                const ingredientsData = await ingredientsResponse.json();
+                const ingredientsResponse = await api.get('/ingredients');
+                const ingredientsData = ingredientsResponse.data;
+
                 setAllIngredients(ingredientsData);
 
                 // formating data
@@ -76,7 +76,7 @@ export default function EditRecipePage() {
                         sodium: recipeData.nutrition?.sodium ?? '',
                         fiber: recipeData.nutrition?.fiber ?? '',
                         sugar: recipeData.nutrition?.sugar ?? '',
-            },
+                },
                     ingredients: (recipeData.ingredients ?? []).map((ing: any) => ({
                         ingredientId: ing.ingredient.id,
                         quantity: ing.quantity,
@@ -106,11 +106,6 @@ export default function EditRecipePage() {
         // For number inputs, allow the state to hold an empty string
         const processedValue = (name === 'portion' && (value === '' || parseFloat(value) < 1)) ? 1 : value;
         setFormData((prev: any) => ({ ...prev, [name]: processedValue }));
-
-        // let processedValue: string | number = value;
-        // if (type === 'number') processedValue = value === '' ? 0 : parseFloat(value);
-        // if (name === 'portion' && processedValue < 1) processedValue = 1;
-        // setFormData((prev: any) => ({ ...prev, [name]: processedValue }));
     };
     const handleNutritionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -164,20 +159,9 @@ export default function EditRecipePage() {
         setSuccess(null);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/myrecipe/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload),
-            });
-            if (!response.ok) {
-                const message = await response.text();
-                throw new Error(message || 'Failed to update recipe.');
-            }
-            setSuccess('Recipe updated successfully!');
-            setTimeout(() => navigate(`/myrecipe/${id}`), 200);
+            await api.put(`/myrecipe/${id}`, payload);
         } catch (err: any) {
-            setError(err.message);
+            setError(err.response?.data?.message || err.message || 'Failed to update recipe.');
         } finally {
             setLoading(false);
         }
