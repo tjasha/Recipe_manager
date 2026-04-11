@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import api from '../api/client';
 
 interface IngredientInRecipe {
     id: number;
@@ -36,7 +37,7 @@ interface FullRecipe {
     author: {
         id: number;
         name: string;
-    };
+    } | null;
     imageURL: string | null;
     portion: number;
     preparationTime: number | null;
@@ -55,14 +56,8 @@ export default function RecipePage() {
     useEffect(() => {
         const fetchRecipe = async () => {
             try {
-                const response = await fetch(`http://localhost:8080/api/recipe/${id}`, {
-                    credentials: 'include',
-                });
-                if (!response.ok) {
-                    throw new Error(`Recipe not found or server error.`);
-                }
-                const data = await response.json();
-                setRecipe(data);
+                const response = await api.get(`/recipe/${id}`);
+                setRecipe(response.data);
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -81,19 +76,12 @@ export default function RecipePage() {
 
         try {
             // call API to adjust portions
-            const response = await fetch(`http://localhost:8080/api/recipes/${id}/adjust-portion`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ newServingSize: newPortion }),
+            const response = await api.post(`/recipes/${id}/adjust-portion`, {
+                newServingSize: newPortion
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to adjust portions.');
-            }
-
             // response from API
-            const adjustedIngredients = await response.json();
+            const adjustedIngredients = await response.data;
 
             // adjust ingredients on the page with new values
             setRecipe(prev => prev ? {
@@ -117,7 +105,8 @@ export default function RecipePage() {
             <div className="row">
                 <div className="col-md-8 offset-md-2">
                     <h1>{recipe.title}</h1>
-                    <p className="text-muted">By {recipe.author!= null ? recipe.author.name : 'deleted author'}</p>
+                    <p className="text-muted">By {recipe.author?.name ?? 'deleted author'}</p>
+
                     {recipe.imageURL && <img src={recipe.imageURL} alt={recipe.title} className="img-fluid rounded mb-4" />}
 
                     <p className="lead">{recipe.description}</p>

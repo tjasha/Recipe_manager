@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../api/client';
 
 // Ingredients from DB for the drop-down
 interface Ingredient {
@@ -69,10 +70,8 @@ export default function CreateRecipePage() {
     useEffect(() => {
         const fetchIngredients = async () => {
             try {
-                const response = await fetch('http://localhost:8080/api/ingredients');
-                if (!response.ok) throw new Error('Failed to fetch ingredients.');
-                const data = await response.json();
-                setAllIngredients(data);
+                const response = await api.get('/ingredients');
+                setAllIngredients(response.data);
             } catch (err) {
                 setError('Could not load ingredients for the dropdown.');
             }
@@ -169,34 +168,20 @@ export default function CreateRecipePage() {
         setSuccess(null);
 
         try {
-            const response = await fetch('http://localhost:8080/api/createRecipe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include', // Send cookies
-                body: JSON.stringify(formData),
-            });
-            //user is not logged in
-            if (response.status === 401) {
-                setError('You must be logged in to create a recipe.');
-                return;
-            }
-            //other errors
-            if (!response.ok) {
-                try {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Server error: ${response.status}`);
-                } catch (jsonError) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-            }
+            const response = await api.post('/createRecipe', formData);
 
-            const newRecipe = await response.json();
+            const newRecipe = response.data;
             setSuccess(`Recipe "${newRecipe.title}" created successfully!`);
             // Redirect to the recipe page after saving
             setTimeout(() => navigate(`/myrecipe/${newRecipe.id}`), 2000);
 
         } catch (err: any) {
-            setError(err.message);
+            //user is not logged in
+            if (err.response && err.response.status === 401) {
+                setError('You must be logged in to create a recipe.');
+            } else {
+                setError(err.message || "An error occurred while creating the recipe.")
+            }
         } finally {
             setLoading(false);
         }

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
+import api from '../api/client';
+import { toast } from 'react-toastify';
 
 interface IngredientInRecipe {
     id: number;
@@ -36,7 +38,7 @@ interface FullRecipe {
     author: {
         id: number;
         name: string;
-    };
+    } | null;
     imageURL: string | null;
     portion: number;
     preparationTime: number | null;
@@ -58,22 +60,16 @@ export default function MyRecipePage() {
     useEffect(() => {
         const fetchRecipe = async () => {
             try {
-                const response = await fetch(`http://localhost:8080/api/myrecipe/${id}`, {
-                    credentials: 'include',
-                });
-                //user is not logged in
-                if (response.status === 401) {
-                    setError('You must be logged in to view this page.');
-                    setLoading(false);
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error(`Recipe not found or server error.`);
-                }
-                const data = await response.json();
-                setRecipe(data);
+                const response = await api.get(`/myrecipe/${id}`);
+                setRecipe(response.data);
             } catch (err: any) {
-                setError(err.message);
+                //user is not logged in
+                if (err.response && err.response.status === 401) {
+                    setError('You must be logged in to view this page.');
+                } else {
+                    setError('Failed to fetch recipe.');
+                }
+                console.error(err);
             } finally {
                 setLoading(false);
             }
@@ -90,37 +86,26 @@ export default function MyRecipePage() {
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/deleteRecipe/${recipeId}`, {
-                method: 'DELETE',
-                credentials: 'include',
-            });
-
-            if (response.status === 404) {
-                alert("Error: This recipe was already deleted or you don't have permission.");
-            } else if (!response.ok) {
-                throw new Error('Failed to delete the recipe.');
-            } else if (response.ok) {
-                setTimeout(() => navigate(`/myrecipes`), 2000);
-            }
-
+            const response = await api.delete(`/deleteRecipe/${recipeId}`);
+            toast.success('Recipe deleted successfully!');
+            navigate(`/myrecipes`);
         } catch (err: any) {
-            alert(err.message);
+            if (err.response && err.response.status === 404) {
+                toast.error("Error: This recipe was already deleted or you don't have permission.");
+            } else if (err.response && err.response.status === 401) {
+                toast.error("Error: You must be logged in to delete a recipe.");
+            } else {
+                toast.error(err.response?.data?.message || err.message || "An unknown error occurred.");
+            }
         }
     };
 
     const handleTogglePublish = async (recipeId: number, currentStatus: boolean) => {
         const newStatus = !currentStatus;
         try {
-            const response = await fetch(`http://localhost:8080/api/myrecipe/${recipeId}/publish`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ published: newStatus }),
+             await api.patch(`/myrecipe/${recipeId}/publish`, {
+                published: newStatus
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to update publish status.');
-            }
 
             if (recipe) {
                 setRecipe({
@@ -130,7 +115,7 @@ export default function MyRecipePage() {
             }
 
         } catch (err: any) {
-            alert(`Error: ${err.message}`);
+            toast.error(`Error: ${err.response?.data?.message || err.message || 'Failed to update status.'}`);
         }
     };
 

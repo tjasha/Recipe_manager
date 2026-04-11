@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import api from '../api/client';
 
 // This component will handle the initial session check
 export default function CheckSession({ onSessionChecked, onLogin }: { onSessionChecked: () => void, onLogin: (user: any) => void }) {
@@ -7,17 +8,15 @@ export default function CheckSession({ onSessionChecked, onLogin }: { onSessionC
         const verifySession = async () => {
             try {
                 // We will create this new endpoint on the backend
-                const response = await fetch('http://localhost:8080/api/auth/check-session', {
-                    credentials: 'include',
-                });
+                const response = await api.get('/auth/check-session');
 
-                if (response.ok) {
-                    const userData = await response.json();
-                    // If the session is valid, call the login handler from App.tsx
-                    onLogin(userData);
-                }
+                const userData = await response.data;
+                // If the session is valid, call the login handler from App.tsx
+                onLogin(userData);
+
             } catch (error) {
-                console.error("Session check failed:", error);
+                // axios automatically throw errors for all statuses != 200
+                console.log("Session check failed:", error);
             } finally {
                 // Signal to the App that the check is complete
                 onSessionChecked();
