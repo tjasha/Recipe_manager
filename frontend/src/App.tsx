@@ -57,7 +57,7 @@ function App() {
             <ToastContainer
                 position="top-right"
                 autoClose={3000}
-                aria-label
+                aria-label="Notifications"
                 hideProgressBar={false}
                 newestOnTop={false}
                 closeOnClick

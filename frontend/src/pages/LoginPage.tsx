@@ -19,7 +19,7 @@ export default function LoginPage({ onLoginSuccess }: { onLoginSuccess: (user: a
 
             const user = res.data;
             onLoginSuccess(user);
-            console.log('Backend login successful. User:', user);
+            console.log('Backend login successful.');
             // The backend has set a session cookie.
 
         } catch {

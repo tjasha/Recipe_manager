@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/client';
+import { toast } from 'react-toastify';
 
 const IngredientAdder = ({ allIngredients, onAdd }: { allIngredients: any[], onAdd: (id: number, qty: number) => void }) => {
     const [selectedId, setSelectedId] = useState<number | ''>('');
@@ -160,8 +161,11 @@ export default function EditRecipePage() {
 
         try {
             await api.put(`/myrecipe/${id}`, payload);
+            toast.success('Recipe updated successfully.');
+            navigate(`/myrecipe/${id}`);
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || 'Failed to update recipe.');
+            toast.error(err.response?.data?.message || err.message || 'Failed to update recipe.');
         } finally {
             setLoading(false);
         }
