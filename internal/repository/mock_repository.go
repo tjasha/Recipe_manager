@@ -8,9 +8,11 @@ import (
 
 // MockRepository is a mock repository for testing
 type MockRepository struct {
-	ExpectError bool
-	User        *model.User
-	Recipe      model.Recipe
+	ExpectError               bool
+	User                      *model.User
+	Recipe                    model.Recipe
+	Users                     []model.User
+	SkipGoogleTokenValidation bool
 }
 
 // --- This is not used yet, just ready to start testing ---
@@ -58,5 +60,34 @@ func (m *MockRepository) PublishRecipe(ctx context.Context, recipeId int64, newS
 	return nil
 }
 func (m *MockRepository) UpdateRecipe(ctx context.Context, recipeData *model.RecipeForm, userID uint) error {
+	return nil
+}
+
+func (m *MockRepository) GetAllUsers(ctx context.Context, limit, offset int) ([]model.User, error) {
+	if m.ExpectError {
+		return nil, context.DeadlineExceeded
+	}
+
+	return m.Users, nil
+}
+
+func (m *MockRepository) DeleteUser(ctx context.Context, userId int) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
+	return nil
+}
+
+func (m *MockRepository) UpdateUserRole(ctx context.Context, userId, role int) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
+	return nil
+}
+
+func (m *MockRepository) UpdateUserState(ctx context.Context, userId int, state string) error {
+	if m.ExpectError {
+		return context.DeadlineExceeded
+	}
 	return nil
 }

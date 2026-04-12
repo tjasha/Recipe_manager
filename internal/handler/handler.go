@@ -135,14 +135,27 @@ func (h *Handler) VerifyGoogleToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var payload *idtoken.Payload
 	// Validate the token
-	payload, err := idtoken.Validate(r.Context(), token.Credential, h.App.Config.GoogleOauthClientID)
-	if err != nil {
-		log.Printf("ERROR: Invalid token: %v", err)
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
+	// skip validation for mock repository
+	if mockRepo, ok := h.App.DB.(*repository.MockRepository); ok && mockRepo.SkipGoogleTokenValidation {
+		// simulate successful validation and mock payload that we need later
+		payload = &idtoken.Payload{
+			Claims: map[string]interface{}{
+				"email": "test@example.com",
+				"name":  "Test User",
+				"sub":   "test-google-id",
+			},
+		}
+	} else {
+		// Validate token for is not mock
+		payload, err = idtoken.Validate(r.Context(), token.Credential, h.App.Config.GoogleOauthClientID)
+		if err != nil {
+			log.Printf("ERROR: Invalid token: %v", err)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
 	}
-
 	claims := payload.Claims
 	log.Println(claims)
 
@@ -609,6 +622,157 @@ func (h *Handler) AdjustServingSize(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(newIngredients)
+	if err != nil {
+		return
+	}
+}
+
+func (h *Handler) ReturnAllUsers(w http.ResponseWriter, r *http.Request) {
+
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	// check that user has admin rights
+	accessLevel, ok := h.App.Session.Get(r.Context(), "accessLevel").(int)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+	if accessLevel > 0 {
+		http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+		return
+	}
+
+	users, err := h.App.DB.GetAllUsers(r.Context(), 100, 0)
+	if err != nil {
+		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		return
+	}
+}
+
+func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+
+	// check that user is logged in
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	// check that user has admin rights
+	accessLevel, ok := h.App.Session.Get(r.Context(), "accessLevel").(int)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+	if accessLevel > 0 {
+		http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+		return
+	}
+
+	//get user id to be deleted from the URL
+	idStr := chi.URLParam(r, "id")
+	managedUserId, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// user can't delete himself
+	userIDInt := int(userID.(uint))
+	if managedUserId == userIDInt {
+		http.Error(w, "Forbidden: You can't delete yourself.", http.StatusForbidden)
+		return
+	}
+
+	err = h.App.DB.DeleteUser(r.Context(), managedUserId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
+
+	// check that user is logged in
+	userID := h.App.Session.Get(r.Context(), "userID")
+	if userID == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	// check that user has admin rights
+	accessLevel, ok := h.App.Session.Get(r.Context(), "accessLevel").(int)
+	if !ok {
+		http.Error(w, "Invalid session data", http.StatusInternalServerError)
+		return
+	}
+	if accessLevel > 0 {
+		http.Error(w, "Forbidden: You do not have permission to perform this action.", http.StatusForbidden)
+		return
+	}
+
+	//get user to be updated from the URL
+	idStr := chi.URLParam(r, "id")
+	managedUserId, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		return
+	}
+
+	// get changes from payload
+	var payload map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	log.Println("user id", managedUserId, " payload ", payload)
+
+	// check which key is returned
+	if role, ok := payload["access_level"]; ok {
+		if newRole, ok := role.(float64); ok {
+			err = h.App.DB.UpdateUserRole(r.Context(), managedUserId, int(newRole))
+		} else {
+			http.Error(w, "Invalid role value", http.StatusBadRequest)
+			return
+		}
+	} else if state, ok := payload["state"]; ok {
+		if newState, ok := state.(string); ok {
+			err = h.App.DB.UpdateUserState(r.Context(), managedUserId, newState)
+		} else {
+			http.Error(w, "Invalid state value", http.StatusBadRequest)
+			return
+		}
+	} else {
+		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		return
+	}
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.NotFound(w, r)
+			return
+		}
+		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode("User updated successfully")
 	if err != nil {
 		return
 	}

@@ -19,4 +19,8 @@ type Repository interface {
 	DeleteRecipe(ctx context.Context, recipeId int64, userId uint) error
 	PublishRecipe(ctx context.Context, recipeId int64, newStatus bool, userId uint) error
 	UpdateRecipe(ctx context.Context, recipeData *model.RecipeForm, userId uint) error
+	GetAllUsers(ctx context.Context, limit, offset int) ([]model.User, error)
+	DeleteUser(ctx context.Context, userId int) error
+	UpdateUserRole(ctx context.Context, userId, role int) error
+	UpdateUserState(ctx context.Context, userId int, state string) error
 }

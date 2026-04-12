@@ -92,9 +92,9 @@ func New(app *handler.Application) http.Handler {
 		api.Group(func(r chi.Router) {
 			r.Use(h.RequireRole(0))
 
-			//To-DO
-			//r.Delete("/deleteUser/{id}", h.DeleteUser)
-
+			r.Get("/admin/users", h.ReturnAllUsers)
+			r.Delete("/admin/users/{id}", h.DeleteUser)
+			r.Patch("/admin/users/{id}", h.UpdateUser)
 		})
 	})
 
