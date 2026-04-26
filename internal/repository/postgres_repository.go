@@ -4,11 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/tjasha/Recipe_manager/internal/model"
+	"github.com/tjasha/Recipe_manager/internal/service"
 )
 
 type PostgresRepository struct {
@@ -49,18 +52,6 @@ func (r *PostgresRepository) GetUserByEmail(ctx context.Context, email string) (
 	}
 	return &user, nil
 }
-
-//func (r *PostgresRepository) AuthenticateUser(ctx context.Context, user *model.User) (int, string, int, error) {
-//	var id, accessLevel int
-//	var UserName string
-//
-//	err := r.pool.QueryRow(ctx,
-//		"INSERT INTO users (user_name, email, password, access_level) VALUES ($1, $2, $3, $4) RETURNING id, user_name, access_level",
-//		user.UserName, user.Email, user.Password, user.AccessLevel,
-//	).Scan(&id, &UserName, &accessLevel)
-//
-//	return id, UserName, accessLevel, err
-//}
 
 // GetAllPublishedRecipes retrieves all recipes from the database.
 func (r *PostgresRepository) GetAllPublishedRecipes(ctx context.Context) ([]model.Recipe, error) {
@@ -704,4 +695,141 @@ func (r *PostgresRepository) UpdateUserState(ctx context.Context, userId int, st
 	}
 
 	return nil
+}
+
+// GetFilteredAndSortedPublishedRecipes retrieves all recipes from the database and apply filter and sorting.
+func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Context, filters service.ListRecipesParams) ([]model.Recipe, error) {
+
+	query := `select r.id, r.title, r.description, r.portion, r.preparation_time, r.cooking_time, (r.preparation_time + r.cooking_time) AS total_time, r.published, 
+       r.image_url, r.created_at, r.modified_at
+		from recipe r  
+		LEFT JOIN nutrition n ON r.id = n.recipe_id
+		join recipe_ingredient ri on i.id = ri.ingredient_id
+-- 		where r.published = true
+-- 		AND r.author_id = :author_id
+-- 		AND n.calories <= :max_calories
+-- 		AND n.calories >= :min_calories
+-- 		AND n.protein <= :max_protein
+-- 		AND n.protein >= :min_protein
+-- 		AND (COALESCE(r.preparation_time, 0) + COALESCE(r.cooking_time, 0)) <= :total_time_max
+
+-- 		AND ri.ingredient_id IN (:ingredient_ids)
+-- 			GROUP BY r.id
+-- 			HAVING COUNT(DISTINCT ri.ingredient_id) = :ingredient_count
+		`
+
+	// build dynamin WHERE conditions
+	var whereConditions []string
+	var args []interface{}
+	argCount := 0
+
+	// always true
+	whereConditions = append(whereConditions, "r.published = true")
+	argCount++
+
+	// other dynamic filters
+	if filters.Filters.AuthorID != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("r.author_id = $%d", argCount))
+		args = append(args, *filters.Filters.AuthorID)
+		argCount++
+	}
+
+	if filters.Filters.MaxCalories != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("r.calories <= %d", argCount))
+		args = append(args, *filters.Filters.MaxCalories)
+		argCount++
+	}
+
+	if filters.Filters.MinCalories != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("r.calories => %d", argCount))
+		args = append(args, filters.Filters.MinCalories)
+		argCount++
+	}
+
+	if filters.Filters.MaxProtein != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("r.protein <= %d", argCount))
+		args = append(args, filters.Filters.MaxProtein)
+		argCount++
+	}
+
+	if filters.Filters.MinProtein != nil {
+		whereConditions = append(whereConditions, fmt.Sprintf("r.protein => %d", argCount))
+		args = append(args, filters.Filters.MinProtein)
+		argCount++
+	}
+
+	if filters.Filters.MaxTotalTime != nil {
+		whereConditions = append(
+			whereConditions,
+			fmt.Sprintf("(COALESCE(r.preparation_time, 0) + COALESCE(r.cooking_time, 0)) <= %d", argCount),
+		)
+		args = append(args, *filters.Filters.MaxTotalTime)
+		argCount++
+	}
+
+	// add where condition to the query
+	if len(whereConditions) > 0 {
+		query += " WHERE " + strings.Join(whereConditions, " AND ")
+	}
+
+	// add ordering to the query
+	switch filters.Sort {
+	case service.SortCaloriesAsc:
+		query += " ORDER BY calories ASC"
+	case service.SortCaloriesDesc:
+
+		query += " ORDER BY calories DESC"
+	case service.SortTotalTimeAsc:
+
+		query += " ORDER BY total_time ASC" // Use the alias from the subquery
+	case service.SortTotalTimeDesc:
+
+		query += " ORDER BY total_time DESC"
+	case service.SortModifiedAtAsc:
+		query += " ORDER BY modified_at ASC"
+	default: // Default to SortModifiedAtDesc
+
+		query += " ORDER BY modified_at DESC"
+	}
+
+	// add pagination to the query
+	query += " LIMIT $1 OFFSET $2"
+
+	// run the query
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var recipes = make([]model.Recipe, 0)
+
+	//scan every results
+	for rows.Next() {
+		var recipe model.Recipe
+		err := rows.Scan(
+			&recipe.ID,
+			&recipe.Title,
+			&recipe.Description,
+			&recipe.Portion,
+			&recipe.PreparationTime,
+			&recipe.CookingTime,
+			&recipe.TotalTime,
+			&recipe.Published,
+			&recipe.ImageURL,
+			&recipe.CreatedAt,
+			&recipe.ModifiedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		recipes = append(recipes, recipe)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return recipes, nil
 }

@@ -777,3 +777,97 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// GetFilteredAndSortedPublishedRecipes returns recipes filtered and sorted by user input and paginated
+func (h *Handler) GetFilteredAndSortedPublishedRecipes(w http.ResponseWriter, r *http.Request) {
+
+	// set up the default filter values
+	params := service.ListRecipesParams{
+		Sort: service.SortModifiedAtDesc, // default sorting
+		Pagination: service.Pagination{
+			Limit:  20, // default limit
+			Offset: 0,
+		},
+	}
+
+	// get URL parameters
+	query := r.URL.Query()
+
+	if authorIDStr := query.Get("author"); authorIDStr != "" {
+		if id, err := strconv.ParseInt(authorIDStr, 10, 64); err == nil {
+			params.Filters.AuthorID = &id
+		}
+	}
+
+	if maxCaloriesStr := query.Get("max_calories"); maxCaloriesStr != "" {
+		if cal, err := strconv.Atoi(maxCaloriesStr); err == nil {
+			params.Filters.MaxCalories = &cal
+		}
+	}
+
+	if minCaloriesStr := query.Get("min_calories"); minCaloriesStr != "" {
+		if cal, err := strconv.Atoi(minCaloriesStr); err == nil {
+			params.Filters.MinCalories = &cal
+		}
+	}
+
+	if maxTimeStr := query.Get("max_total_time"); maxTimeStr != "" {
+		if time, err := strconv.Atoi(maxTimeStr); err == nil {
+			params.Filters.MaxTotalTime = &time
+		}
+	}
+
+	if maxProteinStr := query.Get("max_protein"); maxProteinStr != "" {
+		if prot, err := strconv.ParseFloat(maxProteinStr, 64); err == nil {
+			params.Filters.MaxProtein = &prot
+		}
+	}
+
+	if minProteinStr := query.Get("min_protein"); minProteinStr != "" {
+		if prot, err := strconv.ParseFloat(minProteinStr, 64); err == nil {
+			params.Filters.MinProtein = &prot
+		}
+	}
+
+	if maxTimeStr := query.Get("max_total_time"); maxTimeStr != "" {
+		if time, err := strconv.Atoi(maxTimeStr); err == nil {
+			params.Filters.MaxTotalTime = &time
+		}
+	}
+
+	// check the sorting
+	if sortKey := query.Get("sort"); sortKey != "" {
+		switch service.RecipeSort(sortKey) {
+		case service.SortModifiedAtDesc, service.SortModifiedAtAsc,
+			service.SortCaloriesAsc, service.SortCaloriesDesc,
+			service.SortTotalTimeAsc, service.SortTotalTimeDesc:
+			params.Sort = service.RecipeSort(sortKey)
+		}
+	}
+
+	// check pagination
+	if limitStr := query.Get("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 {
+			params.Pagination.Limit = limit
+		}
+	}
+
+	if offsetStr := query.Get("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
+			params.Pagination.Offset = offset
+		}
+	}
+
+	// call the repository to get the filtered and sorted recipes
+	recipes, err := h.App.DB.GetFilteredAndSortedPublishedRecipes(r.Context(), params)
+	if err != nil {
+		http.Error(w, "Failed to retrieve recipes", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(recipes)
+	if err != nil {
+		return
+	}
+}

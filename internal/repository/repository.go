@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/tjasha/Recipe_manager/internal/model"
+	"github.com/tjasha/Recipe_manager/internal/service"
 )
 
 type Repository interface {
@@ -23,4 +24,5 @@ type Repository interface {
 	DeleteUser(ctx context.Context, userId int) error
 	UpdateUserRole(ctx context.Context, userId, role int) error
 	UpdateUserState(ctx context.Context, userId int, state string) error
+	GetFilteredAndSortedPublishedRecipes(ctx context.Context, filters service.ListRecipesParams) ([]model.Recipe, error)
 }

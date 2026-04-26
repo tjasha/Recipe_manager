@@ -25,6 +25,7 @@ type Recipe struct {
 	Portion         int                  `json:"portion"`
 	PreparationTime *int                 `json:"preparationTime"`
 	CookingTime     *int                 `json:"cookingTime"`
+	TotalTime       *int                 `json:"totalTime"`
 	Nutrition       *Nutrition           `json:"nutrition"`
 	Author          *User                `json:"author"`
 	Published       *bool                `json:"published"`
