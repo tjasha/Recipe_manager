@@ -53,10 +53,10 @@ export default function HomePage() {
                     params.append('min_calories', minCalories);
                 }
                 if (maxProteins) {
-                    params.append('max_proteins', maxProteins);
+                    params.append('max_protein', maxProteins);
                 }
                 if (minProteins) {
-                    params.append('min_proteins', minProteins);
+                    params.append('min_protein', minProteins);
                 }
                 if (maxTotalTime) {
                     params.append('max_total_time', maxTotalTime);
@@ -74,7 +74,7 @@ export default function HomePage() {
         };
 
         fetchRecipes();
-    }, [sortOption, maxCalories, maxTotalTime]);
+    }, [sortOption, maxCalories, minCalories, maxProteins, minProteins, maxTotalTime]);
 
     if (loading) {
         return <div className="container mt-4"><h2>Loading recipes...</h2></div>;

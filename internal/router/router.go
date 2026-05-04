@@ -69,7 +69,8 @@ func New(app *handler.Application) http.Handler {
 		api.Get("/auth/check-session", h.CheckSession)
 
 		// Recipes routes
-		api.Get("/recipes", h.ShowAllPublishedRecipes)
+		//api.Get("/recipes", h.ShowAllPublishedRecipes)
+		api.Get("/recipes", h.GetFilteredAndSortedPublishedRecipes)
 		api.Get("/recipe/{id}", h.ShowFullRecipe)
 		api.Post("/recipes/{id}/adjust-portion", h.AdjustServingSize)
 		api.Get("/ingredients", h.GetAllIngredients)

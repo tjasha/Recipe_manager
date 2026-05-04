@@ -704,18 +704,6 @@ func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Co
        r.image_url, r.created_at, r.modified_at
 		from recipe r  
 		LEFT JOIN nutrition n ON r.id = n.recipe_id
-		join recipe_ingredient ri on i.id = ri.ingredient_id
--- 		where r.published = true
--- 		AND r.author_id = :author_id
--- 		AND n.calories <= :max_calories
--- 		AND n.calories >= :min_calories
--- 		AND n.protein <= :max_protein
--- 		AND n.protein >= :min_protein
--- 		AND (COALESCE(r.preparation_time, 0) + COALESCE(r.cooking_time, 0)) <= :total_time_max
-
--- 		AND ri.ingredient_id IN (:ingredient_ids)
--- 			GROUP BY r.id
--- 			HAVING COUNT(DISTINCT ri.ingredient_id) = :ingredient_count
 		`
 
 	// build dynamin WHERE conditions
@@ -725,46 +713,45 @@ func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Co
 
 	// always true
 	whereConditions = append(whereConditions, "r.published = true")
-	argCount++
 
 	// other dynamic filters
 	if filters.Filters.AuthorID != nil {
-		whereConditions = append(whereConditions, fmt.Sprintf("r.author_id = $%d", argCount))
-		args = append(args, *filters.Filters.AuthorID)
 		argCount++
+		whereConditions = append(whereConditions, fmt.Sprintf("r.author = $%d", argCount))
+		args = append(args, *filters.Filters.AuthorID)
 	}
 
 	if filters.Filters.MaxCalories != nil {
-		whereConditions = append(whereConditions, fmt.Sprintf("r.calories <= %d", argCount))
-		args = append(args, *filters.Filters.MaxCalories)
 		argCount++
+		whereConditions = append(whereConditions, fmt.Sprintf("r.calories <= $%d", argCount))
+		args = append(args, *filters.Filters.MaxCalories)
 	}
 
 	if filters.Filters.MinCalories != nil {
-		whereConditions = append(whereConditions, fmt.Sprintf("r.calories => %d", argCount))
-		args = append(args, filters.Filters.MinCalories)
 		argCount++
+		whereConditions = append(whereConditions, fmt.Sprintf("r.calories => $%d", argCount))
+		args = append(args, filters.Filters.MinCalories)
 	}
 
 	if filters.Filters.MaxProtein != nil {
-		whereConditions = append(whereConditions, fmt.Sprintf("r.protein <= %d", argCount))
-		args = append(args, filters.Filters.MaxProtein)
 		argCount++
+		whereConditions = append(whereConditions, fmt.Sprintf("r.protein <= $%d", argCount))
+		args = append(args, filters.Filters.MaxProtein)
 	}
 
 	if filters.Filters.MinProtein != nil {
-		whereConditions = append(whereConditions, fmt.Sprintf("r.protein => %d", argCount))
-		args = append(args, filters.Filters.MinProtein)
 		argCount++
+		whereConditions = append(whereConditions, fmt.Sprintf("r.protein => $%d", argCount))
+		args = append(args, filters.Filters.MinProtein)
 	}
 
 	if filters.Filters.MaxTotalTime != nil {
+		argCount++
 		whereConditions = append(
 			whereConditions,
-			fmt.Sprintf("(COALESCE(r.preparation_time, 0) + COALESCE(r.cooking_time, 0)) <= %d", argCount),
+			fmt.Sprintf("(COALESCE(r.preparation_time, 0) + COALESCE(r.cooking_time, 0)) <= $%d", argCount),
 		)
 		args = append(args, *filters.Filters.MaxTotalTime)
-		argCount++
 	}
 
 	// add where condition to the query
@@ -775,31 +762,40 @@ func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Co
 	// add ordering to the query
 	switch filters.Sort {
 	case service.SortCaloriesAsc:
-		query += " ORDER BY calories ASC"
+		query += " ORDER BY n.calories ASC NULLS LAST"
 	case service.SortCaloriesDesc:
 
-		query += " ORDER BY calories DESC"
+		query += " ORDER BY n.calories DESC NULLS LAST"
 	case service.SortTotalTimeAsc:
 
-		query += " ORDER BY total_time ASC" // Use the alias from the subquery
+		query += " ORDER BY total_time ASC NULLS LAST" // Use the alias from the subquery
 	case service.SortTotalTimeDesc:
-
-		query += " ORDER BY total_time DESC"
+		query += " ORDER BY total_time DESC NULLS LAST"
+	case service.SortProteinDesc:
+		query += " ORDER BY n.protein DESC NULLS LAST"
+	case service.SortProteinAsc:
+		query += " ORDER BY n.protein ASC NULLS LAST"
 	case service.SortModifiedAtAsc:
-		query += " ORDER BY modified_at ASC"
+		query += " ORDER BY r.modified_at ASC NULLS LAST"
 	default: // Default to SortModifiedAtDesc
 
-		query += " ORDER BY modified_at DESC"
+		query += " ORDER BY r.modified_at DESC NULLS LAST"
 	}
 
 	// add pagination to the query
-	query += " LIMIT $1 OFFSET $2"
+	argCount++
+	limitIdx := argCount
+	argCount++
+	offsetIdx := argCount
+	query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", limitIdx, offsetIdx)
+	args = append(args, filters.Pagination.Limit, filters.Pagination.Offset)
 
 	// run the query
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	var recipes = make([]model.Recipe, 0)

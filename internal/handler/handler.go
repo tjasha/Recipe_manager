@@ -829,18 +829,13 @@ func (h *Handler) GetFilteredAndSortedPublishedRecipes(w http.ResponseWriter, r 
 		}
 	}
 
-	if maxTimeStr := query.Get("max_total_time"); maxTimeStr != "" {
-		if time, err := strconv.Atoi(maxTimeStr); err == nil {
-			params.Filters.MaxTotalTime = &time
-		}
-	}
-
 	// check the sorting
 	if sortKey := query.Get("sort"); sortKey != "" {
 		switch service.RecipeSort(sortKey) {
 		case service.SortModifiedAtDesc, service.SortModifiedAtAsc,
 			service.SortCaloriesAsc, service.SortCaloriesDesc,
-			service.SortTotalTimeAsc, service.SortTotalTimeDesc:
+			service.SortTotalTimeAsc, service.SortTotalTimeDesc,
+			service.SortProteinDesc, service.SortProteinAsc:
 			params.Sort = service.RecipeSort(sortKey)
 		}
 	}
