@@ -36,7 +36,6 @@ export default function HomePage() {
     // useEffect runs with first loading of the component.
     useEffect(() => {
         const fetchRecipes = async () => {
-            setLoading(true);
             setError(null);
 
             try {
