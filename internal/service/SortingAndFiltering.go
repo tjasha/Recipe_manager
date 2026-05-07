@@ -20,8 +20,8 @@ const (
 	SortCaloriesDesc   RecipeSort = "calories_desc"
 	SortTotalTimeAsc   RecipeSort = "total_time_asc"
 	SortTotalTimeDesc  RecipeSort = "total_time_desc"
-	SortProteinAsc     RecipeSort = "protein_at_asc"
-	SortProteinDesc    RecipeSort = "protein_at_desc"
+	SortProteinAsc     RecipeSort = "protein_asc"
+	SortProteinDesc    RecipeSort = "protein_desc"
 )
 
 type Pagination struct {

@@ -723,25 +723,25 @@ func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Co
 
 	if filters.Filters.MaxCalories != nil {
 		argCount++
-		whereConditions = append(whereConditions, fmt.Sprintf("r.calories <= $%d", argCount))
+		whereConditions = append(whereConditions, fmt.Sprintf("n.calories <= $%d", argCount))
 		args = append(args, *filters.Filters.MaxCalories)
 	}
 
 	if filters.Filters.MinCalories != nil {
 		argCount++
-		whereConditions = append(whereConditions, fmt.Sprintf("r.calories => $%d", argCount))
+		whereConditions = append(whereConditions, fmt.Sprintf("n.calories >= $%d", argCount))
 		args = append(args, filters.Filters.MinCalories)
 	}
 
 	if filters.Filters.MaxProtein != nil {
 		argCount++
-		whereConditions = append(whereConditions, fmt.Sprintf("r.protein <= $%d", argCount))
+		whereConditions = append(whereConditions, fmt.Sprintf("n.protein <= $%d", argCount))
 		args = append(args, filters.Filters.MaxProtein)
 	}
 
 	if filters.Filters.MinProtein != nil {
 		argCount++
-		whereConditions = append(whereConditions, fmt.Sprintf("r.protein => $%d", argCount))
+		whereConditions = append(whereConditions, fmt.Sprintf("n.protein >= $%d", argCount))
 		args = append(args, filters.Filters.MinProtein)
 	}
 
@@ -793,6 +793,7 @@ func (r *PostgresRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Co
 	// run the query
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
+		log.Println("query error ", err.Error())
 		return nil, err
 	}
 
