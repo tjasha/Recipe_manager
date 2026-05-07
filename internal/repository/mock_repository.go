@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/tjasha/Recipe_manager/internal/model"
+	"github.com/tjasha/Recipe_manager/internal/service"
 )
 
 // MockRepository is a mock repository for testing
@@ -90,4 +91,8 @@ func (m *MockRepository) UpdateUserState(ctx context.Context, userId int, state 
 		return context.DeadlineExceeded
 	}
 	return nil
+}
+
+func (m *MockRepository) GetFilteredAndSortedPublishedRecipes(ctx context.Context, filters service.ListRecipesParams) ([]model.Recipe, error) {
+	return nil, nil
 }
